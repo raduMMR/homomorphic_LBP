@@ -21,6 +21,11 @@ int NSLOTS = 0;
 int T_BITS = 8;
 
 /*************************************************************************************/
+double clock_diff(const clock_t &t1, const clock_t &t2){
+    return double(t2 - t1) / CLOCKS_PER_SEC;
+}
+
+/*************************************************************************************/
 void setGlobalVariables(long p, long r, long d, long c, long w, 
                long L, long m, const Vec<long>& gens, const Vec<long>& ords) {
     
@@ -45,6 +50,7 @@ void setGlobalVariables(long p, long r, long d, long c, long w,
     ea = new EncryptedArray(*context, G);
 
     NSLOTS = ea->size();
+	cout << "NSLOTS = " << NSLOTS << endl;
 }
 
 /*************************************************************************************/
