@@ -180,20 +180,22 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
 
     Ctxt *isSkipped = encryptBitVal(zeroes);
 
+    cout << "enc_nums.size() = " << enc_nums.size() << endl;
+    ZZ z_one(1);
     for(int i=0; i<enc_nums.size(); i++) {
         HE_INT frequency;
 
         (*isSkipped) = (*isCounted[i]);
 
-        isSkipped->negate(); // for multiplication purpose, see below.
+        // isSkipped->negate(); // for multiplication purpose, see below.
+        isSkipped->addConstant(z_one);
+        cout << "~isSkipped = " << decryptBitVal(isSkipped)[0] << endl;
         // if the number has been previously hit, then multiply with 0
         // the frequency of the counting.
 
-        for(int j=i; j<enc_nums.size()-1; j++) {
-            Ctxt* areEqual = compute_z(0, T_BITS, enc_nums[i], enc_nums[j]);
+        for(int j=i; j<enc_nums.size(); j++) {
 
-            cout << decryptIntVal(enc_nums[i])[0] << " = " << decryptIntVal(enc_nums[j])[0];
-            cout << " : " << decryptBitVal(areEqual)[0] << endl;
+            Ctxt* areEqual = compute_z(0, T_BITS, enc_nums[i], enc_nums[j]);
 
             refreshCtxt(areEqual);
 
@@ -204,12 +206,15 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
 
             delete areEqual;
         }
+        cout << "before Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
 
         // skip number if already counted.
         // that means to set the frequency to zero for another hit
         // of a previous number. When doing chi-square computation
         // simply do not take into account elements with zero frequency.
         frequency.setSkipping(*isSkipped);
+
+        cout << "after Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
 
         frequencies.push_back(make_tuple(enc_nums[i], frequency));
     }
@@ -230,13 +235,13 @@ void test_hom_counter() {
     // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
     for(int i=0; i<NSLOTS; i++) {
-        myvector[i] = rand() % 3;
+        myvector[i] = 1; //rand() % 3;
     }
     // myvector is going to be encrypted in one vector<Ctxt*>
     // so we'll shuffle this vector to have different values
     // in the corresponding slots.
 
-    int VEC_SIZE = 10;
+    int VEC_SIZE = 2;
 
     vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
