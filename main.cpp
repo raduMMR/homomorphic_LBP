@@ -227,7 +227,7 @@ void test_hom_counter() {
     // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
     for(int i=0; i<NSLOTS; i++) {
-        myvector[i] = rand() % 3;
+        myvector[i] = rand() % 3 + 1;
     }
     // myvector is going to be encrypted in one vector<Ctxt*>
     // so we'll shuffle this vector to have different values
