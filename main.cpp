@@ -1,4 +1,9 @@
 #include <iostream>
+#include <tuple>
+#include <algorithm>    // std::random_shuffle
+#include <vector>       // std::vector
+#include <ctime>        // std::time
+#include <cstdlib>      // std::rand, std::srand
 #include "basic_primitives.h"
 using namespace std;
 
@@ -78,6 +83,152 @@ void test_LBP() {
 
 }
 
+void refreshCtxt(Ctxt *ctxt) {
+    FHEPubKey& publicKey = *secretKey;
+    publicKey.reCrypt(*ctxt);
+}
+
+class HE_INT {
+
+public:
+
+    HE_INT() {
+        initialize_HE_INT();
+    }
+
+    vector<Ctxt*> enc_bits;
+
+    // make HE_INT an encrypted representation of zero,
+    // with enc_bits[0] = LSB and enc_bits[T_BITS-1] = MSB.
+    void initialize_HE_INT() {
+        vector<long> zeroes(NSLOTS, 0);
+        this->enc_bits = encryptIntVal(zeroes, T_BITS);
+    }
+    
+
+    // TO DO: adauga metoda copy unui Ctxt.
+    void add1Bit(Ctxt* ctxt) {
+        Ctxt *carry = encryptBitVal(vector<long>(NSLOTS, 0));
+        *carry = (*enc_bits[0]);
+        carry->multiplyBy((*ctxt));
+
+        enc_bits[0]->addCtxt(*ctxt);
+
+        Ctxt *new_carry = encryptBitVal(vector<long>(NSLOTS, 0));
+        for(int i=1; i<enc_bits.size(); i++) {
+            *new_carry = (*enc_bits[i]);
+            new_carry->multiplyBy(*carry);
+            enc_bits[i]->addCtxt(*carry);
+            *carry = *new_carry;
+        }
+
+        delete carry;
+        delete new_carry;
+    }
+
+    void setSkipping(const Ctxt &isSkipped) {
+        for(int i=0; i<enc_bits.size(); i++) {
+            enc_bits[i]->multiplyBy(isSkipped);
+        }
+    }
+
+    ~HE_INT() {
+        for(int i=0; i<enc_bits.size(); i++) {
+            delete enc_bits[i];
+        }
+    }
+
+
+};
+
+vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<vector<Ctxt*>> &enc_nums) {
+    // vector representing the number int bits representation
+    // and its HE_INT frequency of hits in enc_nums.
+    vector<tuple<vector<Ctxt*>, HE_INT>> frequencies;
+
+    vector<long> zeroes(NSLOTS, 0);
+    vector<Ctxt*> enc_zero = encryptIntVal(zeroes, T_BITS);
+
+    // for each number keep a parallel vector that is marked if
+    // the number has been counted.
+    vector<Ctxt*> isCounted = encryptIntVal(zeroes, enc_nums.size());
+
+
+    for(int i=0; i<enc_nums.size(); i++) {
+        cout << "i = " << i << " ";
+
+        HE_INT frequency;
+
+        Ctxt isSkipped = (*isCounted[i]);
+        isSkipped.negate(); // for multiplication purpose, see below.
+        // if the number has been previously hit, then multiply with 0
+        // the frequency of the counting.
+
+        for(int j=i; j<enc_nums.size()-1; j++) {
+            cout << " j = " << j << ", ";
+            Ctxt* areEqual = compute_z(0, T_BITS, enc_nums[i], enc_nums[j]);
+            frequency.add1Bit(areEqual);
+
+            // mark number as counted.
+            (*isCounted[j]) = (*areEqual); 
+
+            delete areEqual;
+        }
+        cout << endl;
+
+        // skip number if already counted.
+        // that means to set the frequency to zero for another hit
+        // of a previous number. When doing chi-square computation
+        // simply do not take into account elements with zero frequency.
+        frequency.setSkipping(isSkipped);
+    }
+
+    // cleaning up.
+    for(int i=0; i<enc_zero.size(); i++) {
+        delete enc_zero[i];
+    }
+    for(int i=0; i<isCounted.size(); i++) {
+        delete isCounted[i];
+    }
+
+    return frequencies;
+}
+
+int myrandom (int i) { return std::rand()%i;}
+
+void test_hom_counter() {
+    vector<long> myvector(NSLOTS, 0);
+    for(int i=0; i<NSLOTS; i++) {
+        myvector[i] = rand() % (int)pow(2, T_BITS);
+    }
+
+    int VEC_SIZE = 10;
+
+    vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
+    for(int i=0; i<VEC_SIZE; i++) {
+        enc_nums[i] = encryptIntVal(myvector, T_BITS);
+        random_shuffle ( myvector.begin(), myvector.end(), myrandom);
+    }
+
+    vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
+
+    // cleaning up.
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
+        }
+    }
+
+    for(int i=0; i<freqs.size(); i++) {
+        vector<long> number = decryptIntVal(std::get<0>(freqs[i]));
+        vector<long> frecventa = decryptIntVal(std::get<1>(freqs[i]).enc_bits);
+        cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
+        for(int j=0; j<std::get<0>(freqs[i]).size(); j++) {
+            delete std::get<0>(freqs[i])[j];
+        }
+    }
+
+}
 
 void test_Compute_s() {
 
@@ -210,15 +361,36 @@ int main(int argc, char **argv) {
     long m = FindM(k, L, c, p, d, s, chosen_m, !noPrint);
 
     setDryRun(dry);
+
+    // bootstrapping setup.
+    // long idx = 16;
+    // p=2;
+    // r=1;
+    // c=3;
+    // L=25;
+    // long B=23;
+    // long N=0;
+    // long t=0;
+    // bool cons=0;
+    // long nthreads=1;
+    // long useCache=0;
+
+    // if (seed) 
+    //     SetSeed(ZZ(seed));
+
+    // SetNumThreads(nthreads);
+
     cout << "Generare context ...\n";
-    setGlobalVariables(p, r, d, c, k, w, L, m, gens, ords);
+    setGlobalVariables(p, r, d, c, w, L, m, gens, ords);
+    // setContextWithBootstrapping(idx,p,r,L,c,B,t,cons,useCache);
     cout << "Terminat de generat context.\n";
 
     // test_Compute_s();
     clock_t begin = clock();
-    test_LBP();
+    // test_LBP();
+    // T_BITS = 2;
+    test_hom_counter();
     clock_t end = clock();
-
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
 
     cout << "Cleaning up ...\n";

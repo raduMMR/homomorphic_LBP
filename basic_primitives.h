@@ -14,9 +14,12 @@ extern FHESecKey *secretKey;
 extern EncryptedArray *ea;
 extern bool noPrint;
 extern int NSLOTS;
+extern int T_BITS;
 
-void setGlobalVariables(long p, long r, long d, long c, long k, long w, 
+void setGlobalVariables(long p, long r, long d, long c, long w, 
                long L, long m, const Vec<long>& gens, const Vec<long>& ords);
+
+void setContextWithBootstrapping(long idx, int p, int r, int L, int c, long B, long skHwt, bool cons, int build_cache);
 
 void cleanGlobalVariables();
 
