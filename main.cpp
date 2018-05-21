@@ -192,6 +192,9 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
         for(int j=i; j<enc_nums.size()-1; j++) {
             Ctxt* areEqual = compute_z(0, T_BITS, enc_nums[i], enc_nums[j]);
 
+            cout << decryptIntVal(enc_nums[i])[0] << " = " << decryptIntVal(enc_nums[j])[0];
+            cout << " : " << decryptBitVal(areEqual)[0] << endl;
+
             refreshCtxt(areEqual);
 
             frequency.add1Bit(areEqual);
