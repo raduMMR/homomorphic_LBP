@@ -16,6 +16,8 @@ extern bool noPrint;
 extern int NSLOTS;
 extern int T_BITS;
 
+double clock_diff(const clock_t &t1, const clock_t &t2);
+
 void setGlobalVariables(long p, long r, long d, long c, long w, 
                long L, long m, const Vec<long>& gens, const Vec<long>& ords);
 

@@ -7,12 +7,7 @@
 #include "basic_primitives.h"
 using namespace std;
 
-double clock_diff(const clock_t &t1, const clock_t &t2){
-    return double(t2 - t1) / CLOCKS_PER_SEC;
-}
-
 vector<Ctxt*> hom_LBP(vector<Ctxt*> enc_pixeli, vector<vector<Ctxt*>> vecini, int t_bits);
-
 
 void test_LBP() {
     assert(NSLOTS != 0);
@@ -83,9 +78,11 @@ void test_LBP() {
 
 }
 
-void refreshCtxt(Ctxt *ctxt) {
-    FHEPubKey& publicKey = *secretKey;
-    publicKey.reCrypt(*ctxt);
+void refreshCtxt(Ctxt *&ctxt) {
+    vector<long> bits;
+    bits =  decryptBitVal(ctxt);
+    delete ctxt;
+    ctxt = encryptBitVal(bits);
 }
 
 class HE_INT {
@@ -94,6 +91,22 @@ public:
 
     HE_INT() {
         initialize_HE_INT();
+    }
+
+    HE_INT(const HE_INT& he_int) {
+       clone(he_int);
+    }
+
+    HE_INT& operator=(const HE_INT& he_int) {
+        clone(he_int);
+        return (*this);
+    }
+
+    void clone(const HE_INT& he_int) {
+        initialize_HE_INT();
+        for(int i=0; i<enc_bits.size(); i++) {
+            (*this->enc_bits[i]) = *(he_int.enc_bits[i]);
+        }
     }
 
     vector<Ctxt*> enc_bits;
@@ -119,6 +132,8 @@ public:
             *new_carry = (*enc_bits[i]);
             new_carry->multiplyBy(*carry);
             enc_bits[i]->addCtxt(*carry);
+            // TO DO: use this costly refresh only when mandatory.
+            refreshCtxt(enc_bits[i]);
             *carry = *new_carry;
         }
 
@@ -141,32 +156,43 @@ public:
 
 };
 
-vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<vector<Ctxt*>> &enc_nums) {
-    // vector representing the number int bits representation
-    // and its HE_INT frequency of hits in enc_nums.
-    vector<tuple<vector<Ctxt*>, HE_INT>> frequencies;
+typedef vector<Ctxt*> ENC_INT;
+
+/**
+ * @param enc_nums - vector of encrypted numbers on bits representation
+ * @return - the number of occurences for each number in the vector
+ */
+vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
+
+
+    // this vector will be used to count the occurence for each ENC_INT.
+    // an entry of frequencies vector will hold the enc number ENC_INT and 
+    // its number of hits HE_INT.
+    vector<tuple<ENC_INT, HE_INT>> frequencies;
 
     vector<long> zeroes(NSLOTS, 0);
-    vector<Ctxt*> enc_zero = encryptIntVal(zeroes, T_BITS);
+    ENC_INT enc_zero = encryptIntVal(zeroes, T_BITS);
 
     // for each number keep a parallel vector that is marked if
     // the number has been counted.
-    vector<Ctxt*> isCounted = encryptIntVal(zeroes, enc_nums.size());
+    ENC_INT isCounted = encryptIntVal(zeroes, enc_nums.size());
 
+    Ctxt *isSkipped = encryptBitVal(zeroes);
 
     for(int i=0; i<enc_nums.size(); i++) {
-        cout << "i = " << i << " ";
-
         HE_INT frequency;
 
-        Ctxt isSkipped = (*isCounted[i]);
-        isSkipped.negate(); // for multiplication purpose, see below.
+        (*isSkipped) = (*isCounted[i]);
+
+        isSkipped->negate(); // for multiplication purpose, see below.
         // if the number has been previously hit, then multiply with 0
         // the frequency of the counting.
 
         for(int j=i; j<enc_nums.size()-1; j++) {
-            cout << " j = " << j << ", ";
             Ctxt* areEqual = compute_z(0, T_BITS, enc_nums[i], enc_nums[j]);
+
+            refreshCtxt(areEqual);
+
             frequency.add1Bit(areEqual);
 
             // mark number as counted.
@@ -174,19 +200,22 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<vector<Ctxt*>> &enc_nums
 
             delete areEqual;
         }
-        cout << endl;
 
         // skip number if already counted.
         // that means to set the frequency to zero for another hit
         // of a previous number. When doing chi-square computation
         // simply do not take into account elements with zero frequency.
-        frequency.setSkipping(isSkipped);
+        frequency.setSkipping(*isSkipped);
+
+        frequencies.push_back(make_tuple(enc_nums[i], frequency));
     }
 
     // cleaning up.
+    delete isSkipped;
     for(int i=0; i<enc_zero.size(); i++) {
         delete enc_zero[i];
     }
+
     for(int i=0; i<isCounted.size(); i++) {
         delete isCounted[i];
     }
@@ -197,10 +226,14 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<vector<Ctxt*>> &enc_nums
 int myrandom (int i) { return std::rand()%i;}
 
 void test_hom_counter() {
+    // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
     for(int i=0; i<NSLOTS; i++) {
-        myvector[i] = rand() % (int)pow(2, T_BITS);
+        myvector[i] = rand() % 3;
     }
+    // myvector is going to be encrypted in one vector<Ctxt*>
+    // so we'll shuffle this vector to have different values
+    // in the corresponding slots.
 
     int VEC_SIZE = 10;
 
@@ -212,19 +245,22 @@ void test_hom_counter() {
 
     vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
 
-    // cleaning up.
-    for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
-        }
-    }
+    cout << "freqs.size() = " << freqs.size() << endl;
 
     for(int i=0; i<freqs.size(); i++) {
         vector<long> number = decryptIntVal(std::get<0>(freqs[i]));
         vector<long> frecventa = decryptIntVal(std::get<1>(freqs[i]).enc_bits);
         cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
-        for(int j=0; j<std::get<0>(freqs[i]).size(); j++) {
-            delete std::get<0>(freqs[i])[j];
+        // the memory of the number is deleted below, here it is just a pointer,
+        // for(int j=0; j<std::get<0>(freqs[i]).size(); j++) {
+        //     delete std::get<0>(freqs[i])[j];
+        // }
+    }
+
+    // cleaning up.
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
         }
     }
 
@@ -362,33 +398,11 @@ int main(int argc, char **argv) {
 
     setDryRun(dry);
 
-    // bootstrapping setup.
-    // long idx = 16;
-    // p=2;
-    // r=1;
-    // c=3;
-    // L=25;
-    // long B=23;
-    // long N=0;
-    // long t=0;
-    // bool cons=0;
-    // long nthreads=1;
-    // long useCache=0;
-
-    // if (seed) 
-    //     SetSeed(ZZ(seed));
-
-    // SetNumThreads(nthreads);
-
     cout << "Generare context ...\n";
     setGlobalVariables(p, r, d, c, w, L, m, gens, ords);
-    // setContextWithBootstrapping(idx,p,r,L,c,B,t,cons,useCache);
     cout << "Terminat de generat context.\n";
 
-    // test_Compute_s();
     clock_t begin = clock();
-    // test_LBP();
-    // T_BITS = 2;
     test_hom_counter();
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
