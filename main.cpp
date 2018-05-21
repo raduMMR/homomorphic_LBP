@@ -171,10 +171,11 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
     vector<tuple<ENC_INT, HE_INT>> frequencies;
 
     vector<long> zeroes(NSLOTS, 0);
-    ENC_INT enc_zero = encryptIntVal(zeroes, T_BITS);
 
-    // for each number keep a parallel vector that is marked if
-    // the number has been counted.
+    // for each number keep a parallel vector 
+    // with a Ctxt corresponding to each number
+    // the slot is initialized with encryption of zero
+    // when the number is hit, mark the slot as "seen" => Enc(1) 
     ENC_INT isCounted = encryptIntVal(zeroes, enc_nums.size());
 
     Ctxt *isSkipped = encryptBitVal(zeroes);
@@ -212,9 +213,6 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
 
     // cleaning up.
     delete isSkipped;
-    for(int i=0; i<enc_zero.size(); i++) {
-        delete enc_zero[i];
-    }
 
     for(int i=0; i<isCounted.size(); i++) {
         delete isCounted[i];
@@ -239,9 +237,11 @@ void test_hom_counter() {
 
     vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
+        cout << myvector[0] << " ";
         enc_nums[i] = encryptIntVal(myvector, T_BITS);
         random_shuffle ( myvector.begin(), myvector.end(), myrandom);
     }
+    cout << endl;
 
     vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
 
