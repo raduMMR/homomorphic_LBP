@@ -1,3 +1,4 @@
+#pragma once
 #include <NTL/ZZ.h>
 #include <NTL/BasicThreadPool.h>
 #include "./../FHE.h"
