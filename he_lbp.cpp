@@ -233,6 +233,7 @@ void test_LBP() {
 /*************************************************************************************/
 int myrandom (int i) { return std::rand()%i;}
 
+/*************************************************************************************/
 void test_hom_counter() {
     // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
@@ -243,7 +244,7 @@ void test_hom_counter() {
     // so we'll shuffle this vector to have different values
     // in the corresponding slots.
 
-    int VEC_SIZE = 20;
+    int VEC_SIZE = 5;
 
     vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
@@ -276,6 +277,7 @@ void test_hom_counter() {
 
 }
 
+/*************************************************************************************/
 void test_Compute_s() {
 
     int t_bits = 8;
@@ -324,4 +326,164 @@ void test_Compute_s() {
         }
     }
 
+}
+
+/*************************************************************************************/
+Ctxt* hom_xor(Ctxt* a, Ctxt* b){
+    Ctxt* result = encryptBitVal(vector<long>(NSLOTS, 0));
+    *result = *a;
+    result->addCtxt(*b);
+    return result;
+}
+
+/*************************************************************************************/
+Ctxt* special_hom_or(Ctxt* a, Ctxt* b){
+    Ctxt* enc_zero = encryptBitVal(vector<long>(NSLOTS, 0));
+    Ctxt* result = hom_xor(a, enc_zero);
+    Ctxt* op2 = hom_xor(b, enc_zero);
+    result->multiplyBy(*op2);
+    delete op2;
+    return result;
+}
+
+/*************************************************************************************/
+void orderNumbers(const vector<Ctxt*> &a, const vector<Ctxt*> &b, 
+                    vector<Ctxt*> &gt, vector<Ctxt*> &lt)
+{
+    Ctxt *t = compute_s(0, a.size(), a, b);
+    pseudoRefreshCtxt(t);
+
+    // this will be the greater than number between a and b.
+    gt = encryptIntVal(vector<long>(NSLOTS, 0), a.size());
+
+    // this will be the less than number between a and b
+    lt = encryptIntVal(vector<long>(NSLOTS, 0), a.size());
+
+    Ctxt* old_t = encryptBitVal(vector<long>(NSLOTS, 0));
+    *old_t = *t;
+    Ctxt* enc_one = encryptBitVal(vector<long>(NSLOTS, 1));
+
+    for(int i=0; i<a.size(); i++){
+        *gt[i] = (*enc_one);
+        gt[i]->addCtxt(*t, /*negative=*/true);
+        gt[i]->multiplyBy(*b[i]);
+        t->multiplyBy(*a[i]);
+        gt[i]->addCtxt(*t);
+        (*t) = *old_t;
+
+        *lt[i] = (*enc_one);
+        lt[i]->addCtxt(*t, /*negative=*/true);
+        lt[i]->multiplyBy(*a[i]);
+        t->multiplyBy(*b[i]);
+        lt[i]->addCtxt(*t);
+        (*t) = *old_t;
+    }
+
+    // cleanup.
+    delete old_t;
+    delete t;
+    delete enc_one;
+}
+
+/*************************************************************************************/
+ENC_INT absDifference(const ENC_INT &a, const ENC_INT &b)
+{
+    assert(a.size() == b.size());
+    int num_size = a.size();
+
+    ENC_INT absDiff = encryptIntVal(vector<long>(NSLOTS, 0), num_size);
+    
+    vector<Ctxt*> gt, lt;
+    orderNumbers(a, b, gt, lt);
+
+    Ctxt* old_gt_i = encryptBitVal(vector<long>(NSLOTS, 0));
+    Ctxt* enc_one = encryptBitVal(vector<long>(NSLOTS, 1));
+    Ctxt* borrowed = encryptBitVal(vector<long>(NSLOTS, 0));
+
+    vector<Ctxt*> aux(5);
+
+    for(int i=0; i<num_size; i++){
+        *old_gt_i = *gt[i];
+        // a[i] = abs(a[i]-borrowed);
+        gt[i]->addCtxt(*borrowed, /*negative=*/true); 
+        // result[i] = abs(a[i] - b[i]);
+        *absDiff[i] = *gt[i];
+        absDiff[i]->addCtxt(*lt[i], /*negative=*/true); 
+        // _xor(a[i], 1) * b[i]
+        aux[0] = hom_xor(gt[i], enc_one);
+        aux[0]->multiplyBy(*lt[i]);
+        // borrowed * _xor(old_a, 1)
+        aux[1] = hom_xor(old_gt_i, enc_one);
+        aux[1]->multiplyBy(*borrowed);
+
+        aux[2] = hom_xor(aux[0], aux[1]);
+        aux[3] = special_hom_or(aux[0], aux[1]);
+        aux[4] = hom_xor(aux[2], aux[3]);
+        *borrowed = *aux[4];
+
+        for(int i=0; i<5; i++){ delete aux[i]; }
+
+        // borrowed = _xor( 
+        //     _xor( 
+        //         _xor(a[i], 1) * b[i], 
+        //         borrowed * _xor(old_a, 1)
+        //     ), 
+        //     special_xor(
+        //         _xor(a[i], 1)*b[i], 
+        //         borrowed * _xor(old_a, 1)
+        //      ) 
+        //     );
+    } 
+
+    delete old_gt_i; delete enc_one; delete borrowed;
+    assert(gt.size() == lt.size() );
+    for(int i=0; i<gt.size(); i++){
+        delete gt[i];
+        delete lt[i];
+    }
+
+    return absDiff;
+}
+
+/*************************************************************************************/
+void test_absDifference(){
+    vector<long> a(NSLOTS, 0);
+    vector<long> b(NSLOTS, 0);
+
+
+    for(int i=0; i<10; i++){
+        for(int j=0; j<NSLOTS; j++){
+            a[j] = random()%256;
+            b[j] = random()%256;
+        }
+
+        ENC_INT enc_a = encryptIntVal(a, 8);
+        ENC_INT enc_b = encryptIntVal(b, 8);
+
+        ENC_INT diff = absDifference(enc_a, enc_b);
+
+        vector<long> result = decryptIntVal(diff);
+
+        bool success = true;
+
+        for(int j=0; j<NSLOTS; j++) {
+            if(result[j] != abs(a[j]-b[j])){
+                cout << "FAIL\n";
+                cout << "|" << a[j] << " - " << b[j] << "| = " << result[j] << endl;
+                success = false;
+                break;
+            }
+        }
+
+        // cleanup.
+        for(int j=0; j<8; j++){
+            delete enc_a[j];
+            delete enc_b[j];
+            delete diff[j];
+        }
+
+        if(success == false){
+            break;
+        }
+    }
 }

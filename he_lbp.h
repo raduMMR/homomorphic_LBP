@@ -38,6 +38,20 @@ typedef vector<Ctxt*> ENC_INT;
 vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums);
 
 
+// returns the absolute value of the difference a-b, |a-b|
+ENC_INT absDifference(const ENC_INT &a, const ENC_INT &b);
+
+Ctxt* hom_xor(Ctxt* a, Ctxt* b);
+
+// implements OR bit operation using XOR provided by ctxt addition.
+Ctxt* special_hom_or(Ctxt* a, Ctxt* b);
+
+// "sorts" the numbers a & b, putting in gt the greater than number
+// and in lt the less than number.
+void orderNumbers(const vector<Ctxt*> &a, const vector<Ctxt*> &b, 
+                    vector<Ctxt*> &gt, vector<Ctxt*> &lt);
+
+
 /**
  * instead of bootstrapping, we will involve the user in a 
  * "refreshing" the ciphertext after many multiplications.
@@ -48,4 +62,14 @@ void pseudoRefreshCtxt(Ctxt *&ctxt);
 void test_hom_counter();
 
 void test_LBP();
+
+void test_absDifference();
+
+
+
+
+
+
+
+
 

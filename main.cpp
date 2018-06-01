@@ -1,9 +1,199 @@
 #include <iostream>
 #include "basic_primitives.h"
 #include "he_lbp.h"
+#include <vector>
+#include <tuple>
 using namespace std;
 
+class DivisionLookupTable {
+    public:
+
+    // < <divident, divisor>, quotient>, where quotient = divident/divisor
+    vector<tuple<tuple<long, long>, long>> table;
+};
+
+bool isNewResult(vector<double> &vals, double entry){
+    bool isNew = true;
+    for(int i=0; i<vals.size(); i++){
+        if(vals[i] == entry){
+            isNew = false;
+            break;
+        }
+    }
+    return isNew;
+}
+
+void rangeOfValues(){
+    vector<double> vals;
+
+    double val; 
+
+    for(double i=0; i<256; i++){
+        for(double j=0; j<256; j++){
+            if( (i+j) != 0 ){
+                val = ((i-j)*(i-j)/(i+j));
+                if( i==3 && j==2){
+                    cout << "(3, 2) => " << val << endl;
+                }
+
+                if(isNewResult(vals, val) == true ) {
+                    vals.push_back(val);
+                    if( i==3 && j==2){
+                        cout << "(3, 2) => " << val << endl;
+                    }
+                }
+            }
+        }
+    }
+
+    cout << "VALORI DIFERITE = " << vals.size() << endl;
+
+    // long c;
+    // cin >> c;
+    // for(int i=0; i<vals.size(); i++){
+    //     cout << vals[i] << " ";
+    // }
+    // int contor = 0;
+    // for(int i=0; i<256; i++){
+    //     for(int j=0; j<256; j++){
+    //         if( (i+j) != 0 ){
+    //             val = ((i-j)*(i-j)/(i+j));
+    //             if( val == c) {
+    //                 contor++;
+    //             }
+    //         }
+    //     }
+    // }
+    // cout << "contor = " << contor << endl;
+}
+
+void test_Ctxt_Add(){
+    vector<long> a(NSLOTS, 0);
+    vector<long> b(NSLOTS, 1);
+    vector<long> result;
+
+    Ctxt* enc_zero = encryptBitVal(a);
+    Ctxt* enc_one = encryptBitVal(b);
+
+    Ctxt* sum = encryptBitVal(a);
+
+    sum->addCtxt(*enc_zero);
+    result = decryptBitVal(sum);
+    cout << " 0 + 0 = " << result[0] << endl;
+
+    (*sum) = (*enc_zero);
+    sum->addCtxt(*enc_one);
+    result = decryptBitVal(sum);
+    cout << " 0 + 1 = " << result[0] << endl;
+
+    (*sum) = (*enc_one);
+    sum->addCtxt(*enc_zero);
+    result = decryptBitVal(sum);
+    cout << " 1 + 0 = " << result[0] << endl;
+
+    (*sum) = (*enc_one);
+    sum->addCtxt(*enc_one);
+    result = decryptBitVal(sum);
+    cout << " 1 + 1 = " << result[0] << endl;
+
+    (*sum) = (*enc_zero);
+    sum->addCtxt(*enc_zero, /*negative=*/ true);
+    result = decryptBitVal(sum);
+    cout << " 0 - 0 = " << result[0] << endl;
+
+    (*sum) = (*enc_zero);
+    sum->addCtxt(*enc_one, true);
+    result = decryptBitVal(sum);
+    cout << " 0 - 1 = " << result[0] << endl;
+
+    (*sum) = (*enc_one);
+    sum->addCtxt(*enc_one, true);
+    result = decryptBitVal(sum);
+    cout << " 1 - 1 = " << result[0] << endl;
+
+    (*sum) = (*enc_one);
+    sum->addCtxt(*enc_zero, true);
+    result = decryptBitVal(sum);
+    cout << " 1 - 0 = " << result[0] << endl;
+
+    delete enc_zero;
+    delete enc_one;
+    delete sum;
+}
+
+int _xor(int a, int b){
+    return (a+b)%2;
+}
+
+int special_xor(int a, int b){
+    return _xor(a,0)*_xor(b,0);
+}
+
+int make_number(vector<int> vec){
+    int num = 0;
+    for(int i=0; i<vec.size(); i++){
+        num |= vec[i] << i;
+    }
+    return num;
+}
+
+void test_Difference(){
+    vector<int> a(8);
+    vector<int> b(8);
+    vector<int> result(8, 0);
+
+    bool success = true;
+
+    for(int k=0; k<10000; k++) {
+        int num_a = rand() % 256;
+        int num_b = rand() % 256;
+        if(num_a < num_b) {
+            int aux = num_a; num_a = num_b; num_b = aux;
+        }
+    
+        for(int i=0;i<8; i++){
+            a[i] = (num_a >> i) & 1;
+            b[i] = (num_b >> i) & 1;
+        }
+
+        // cout << a << endl << b << endl;
+        // cout << num_a << " - " << num_b << " = ";
+
+        int borrowed = 0;
+        for(int i=0; i<8; i++){
+            int old_a = a[i];
+            a[i] = abs(a[i]-borrowed);
+            result[i] = abs(a[i] - b[i]);
+            borrowed = _xor( 
+                _xor( 
+                    _xor(a[i], 1) * b[i], 
+                    borrowed * _xor(old_a, 1)
+                ), 
+                special_xor(
+                    _xor(a[i], 1)*b[i], 
+                    borrowed * _xor(old_a, 1)
+                    ) 
+                );
+        } 
+        // cout << make_number(result) << endl;
+
+        if(make_number(result) != (num_a - num_b)){
+            cout << "FAIL\n";
+            cout << result << endl;
+            success = false;
+            break;
+        }
+    }
+
+    if(success == true) {
+        cout << "TOTAL SUCCESS\n";
+    }
+}
+
 int main(int argc, char **argv) {
+
+    // test_Difference();
+    // return 0;
 
     ArgMapping amap;
 
@@ -89,17 +279,15 @@ int main(int argc, char **argv) {
     setGlobalVariables(p, r, d, c, w, L, m, gens, ords);
     cout << "Terminat de generat context.\n";
 
-    Ctxt* test_ctxt = encryptBitVal(vector<long>(NSLOTS, 0));
-
+    /************* TESTING SPACE *********************************/
     clock_t begin = clock();
     // test_hom_counter();
-    for(int i=0; i<100; i++){
-        pseudoRefreshCtxt(test_ctxt);
-    }
+    test_absDifference();
+    // test_Ctxt_Add();
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
+    /************* TESTING SPACE *********************************/
 
-    delete test_ctxt;
 
     cout << "Cleaning up ...\n";
     cleanGlobalVariables();
