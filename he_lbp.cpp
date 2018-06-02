@@ -611,13 +611,22 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
             refresh_ENC_INT(std::get<1>(h1[i]).enc_bits);
             refresh_ENC_INT(std::get<1>(h2[i]).enc_bits);
 
+            cout << "Entering absDifference\n";
             tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
+            cout << "Exited absDiffence\n";
+
+            refresh_ENC_INT(tmp_diff);
+
+            refresh_ENC_INT(std::get<0>(h1[i]));
+            refresh_ENC_INT(std::get<0>(h2[i]));
 
             Ctxt *areEqual = compute_z(0, T_BITS, std::get<0>(h1[i]), std::get<0>(h2[j]));
             for(int k=0; k<tmp_diff.size(); k++){
                 tmp_diff[k]->multiplyBy(*areEqual);
             }
+            cout << "Enterin hom_binarySum\n";
             hom_binarySum(sum, tmp_diff);
+            cout << "Exited hom_binarySum\n";
 
             // cleanup.
             delete areEqual;
