@@ -1,4 +1,4 @@
-6#include <tuple>
+#include <tuple>
 #include <algorithm>    // std::random_shuffle
 #include <vector>       // std::vector
 #include <ctime>        // std::time
