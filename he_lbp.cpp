@@ -592,14 +592,25 @@ void test_homBinarySum(){
     }
 }
 
+void refresh_ENC_INT(ENC_INT &enc_int) {
+    for(int i=0; i<enc_int.size(); i++){
+        pseudoRefreshCtxt(enc_int[i]);
+    }
+}
+
 /*************************************************************************************/
-ENC_INT absoluteValueMetric(const ENC_HIST &h1, const ENC_HIST &h2){
+ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
     ENC_INT sum = encryptIntVal(vector<long>(NSLOTS, 0), 2*T_BITS);
     ENC_INT tmp_diff;
 
     // ?? assert(h1.size() == h2.size());
     for(int i=0; i<h1.size(); i++) {
         for(int j=0; j<h2.size(); j++) {
+
+            // refresh the ctxts before proceeding with further multiplications.
+            refresh_ENC_INT(std::get<1>(h1[i]).enc_bits);
+            refresh_ENC_INT(std::get<1>(h2[i]).enc_bits);
+
             tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
 
             Ctxt *areEqual = compute_z(0, T_BITS, std::get<0>(h1[i]), std::get<0>(h2[j]));
