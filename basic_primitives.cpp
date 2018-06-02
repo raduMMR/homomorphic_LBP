@@ -101,7 +101,7 @@ vector<long> decryptIntVal(const vector<Ctxt*> enc_bits) {
 }
 
 /*************************************************************************************/
-Ctxt* compute_z (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y)
+Ctxt* compute_z (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y)
 {
 	Ctxt *ret = NULL;
 	if (j == 1)
@@ -125,7 +125,7 @@ Ctxt* compute_z (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y)
 }
 
 /*************************************************************************************/
-Ctxt* compute_t (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y)
+Ctxt* compute_t (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y)
 {
 	Ctxt *ret = NULL;
 	if (j == 1)
@@ -152,7 +152,7 @@ Ctxt* compute_t (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y)
 }
 
 /*************************************************************************************/
-Ctxt* compute_s (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y)
+Ctxt* compute_s (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y)
 {
 	Ctxt *ret = NULL;
 	if (j == 1)

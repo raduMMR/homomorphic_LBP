@@ -1,3 +1,4 @@
+#pragma once
 #include <NTL/ZZ.h>
 #include <NTL/BasicThreadPool.h>
 #include "./../FHE.h"
@@ -31,7 +32,9 @@ vector<Ctxt*> encryptIntVal (const vector<long> val, int t_bits);
 vector<long> decryptBitVal (const Ctxt *ct);
 vector<long> decryptIntVal(const vector<Ctxt*> enc_bits);
 
-
-Ctxt* compute_z (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y);
-Ctxt* compute_t (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y);
-Ctxt* compute_s (int i, int j, vector<Ctxt*>& ct_x, vector<Ctxt*>& ct_y);
+// equal
+Ctxt* compute_z (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y);
+// greater than
+Ctxt* compute_t (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y);
+// greater than or equal
+Ctxt* compute_s (int i, int j, const vector<Ctxt*>& ct_x,const vector<Ctxt*>& ct_y);
