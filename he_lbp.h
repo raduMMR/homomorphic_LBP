@@ -66,7 +66,7 @@ void orderNumbers(const vector<Ctxt*> &a, const vector<Ctxt*> &b,
 // we'll try to use the absolute value metric for comparing histograms.
 // @param h1, h2 - the histograms to be compared
 // @return the value of the absolute metric used for decision.
-ENC_INT absoluteValueMetric(const ENC_HIST &h1, const ENC_HIST &h2);
+ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2);
 
 
 // add to accumulator the term number
