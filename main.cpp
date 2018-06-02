@@ -180,7 +180,11 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
 
     Ctxt *isSkipped = encryptBitVal(zeroes);
 
-    cout << "enc_nums.size() = " << enc_nums.size() << endl;
+
+	Ctxt *ENC_ONE = encryptBitVal(vector<long>(NSLOTS, 1));
+	Ctxt *aux = encryptBitVal(vector<long>(NSLOTS, 1));
+
+    // cout << "enc_nums.size() = " << enc_nums.size() << endl;
     ZZ z_one(1);
     for(int i=0; i<enc_nums.size(); i++) {
         HE_INT frequency;
@@ -189,7 +193,7 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
 
         // isSkipped->negate(); // for multiplication purpose, see below.
         isSkipped->addConstant(z_one);
-        cout << "~isSkipped = " << decryptBitVal(isSkipped)[0] << endl;
+        // cout << "~isSkipped = " << decryptBitVal(isSkipped)[0] << endl;
         // if the number has been previously hit, then multiply with 0
         // the frequency of the counting.
 
@@ -202,11 +206,16 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
             frequency.add1Bit(areEqual);
 
             // mark number as counted.
-            (*isCounted[j]) = (*areEqual); 
+		*aux = *ENC_ONE;
+		ENC_ONE->addCtxt(*areEqual, true);
+		isCounted[j]->multiplyBy(*ENC_ONE);
+		isCounted[j]->addCtxt(*areEqual);
 
+
+		*ENC_ONE = *aux;
             delete areEqual;
         }
-        cout << "before Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
+        // cout << "before Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
 
         // skip number if already counted.
         // that means to set the frequency to zero for another hit
@@ -214,13 +223,15 @@ vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
         // simply do not take into account elements with zero frequency.
         frequency.setSkipping(*isSkipped);
 
-        cout << "after Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
+        // cout << "after Skipping, f = " << decryptIntVal(frequency.enc_bits)[0] << endl;
 
         frequencies.push_back(make_tuple(enc_nums[i], frequency));
     }
 
     // cleaning up.
     delete isSkipped;
+delete ENC_ONE;
+delete aux;
 
     for(int i=0; i<isCounted.size(); i++) {
         delete isCounted[i];
@@ -235,13 +246,13 @@ void test_hom_counter() {
     // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
     for(int i=0; i<NSLOTS; i++) {
-        myvector[i] = rand() % 3 + 1;
+        myvector[i] = rand() % 2 + 1;
     }
     // myvector is going to be encrypted in one vector<Ctxt*>
     // so we'll shuffle this vector to have different values
     // in the corresponding slots.
 
-    int VEC_SIZE = 20;
+    int VEC_SIZE = 8;
 
     vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
