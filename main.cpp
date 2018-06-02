@@ -282,8 +282,10 @@ int main(int argc, char **argv) {
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
     // test_hom_counter();
-    test_absDifference();
+    // test_absDifference();
     // test_Ctxt_Add();
+    // test_homBinarySum();
+    test_absoluteValueMetric();
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
     /************* TESTING SPACE *********************************/

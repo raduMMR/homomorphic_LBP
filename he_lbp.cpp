@@ -329,7 +329,7 @@ void test_Compute_s() {
 }
 
 /*************************************************************************************/
-Ctxt* hom_xor(Ctxt* a, Ctxt* b){
+Ctxt* hom_xor(const Ctxt* a, const Ctxt* b){
     Ctxt* result = encryptBitVal(vector<long>(NSLOTS, 0));
     *result = *a;
     result->addCtxt(*b);
@@ -337,7 +337,7 @@ Ctxt* hom_xor(Ctxt* a, Ctxt* b){
 }
 
 /*************************************************************************************/
-Ctxt* special_hom_or(Ctxt* a, Ctxt* b){
+Ctxt* special_hom_or(const Ctxt* a, const Ctxt* b){
     Ctxt* enc_zero = encryptBitVal(vector<long>(NSLOTS, 0));
     Ctxt* result = hom_xor(a, enc_zero);
     Ctxt* op2 = hom_xor(b, enc_zero);
@@ -486,4 +486,226 @@ void test_absDifference(){
             break;
         }
     }
+}
+
+/*************************************************************************************/
+// for debugging purposes.
+void watchCtxt(const Ctxt* ctxt, const char * name, int line){
+    cout << name << " : " << decryptBitVal(ctxt)[0] << " on line " << line << endl;
+}
+
+/*************************************************************************************/
+Ctxt* hom_OR(const Ctxt* a, const Ctxt *b) {
+    Ctxt *tmp1 = special_hom_or(a, b);
+    Ctxt *tmp2 = hom_xor(a, b);
+    Ctxt *result = hom_xor(tmp1, tmp2);
+    delete tmp1; delete tmp2;
+    return result;
+}
+
+/*************************************************************************************/
+void hom_binarySum(ENC_INT &accumulator, const ENC_INT &term)
+{
+    Ctxt* carry = encryptBitVal(vector<long>(NSLOTS, 0));
+    Ctxt* old_acc_i = encryptBitVal(vector<long>(NSLOTS, 0));
+    // vector of Ctxts aux will be used to hold the following products:
+    // aux[0] = carry*a, aux[1]=carry*b, aux[2]=a*b
+    // which will be further used to compute the next carry using the formula
+    // new_carry = (carry*a)+(carry*b)+(a*b)
+    vector<Ctxt*> aux = encryptIntVal(vector<long>(NSLOTS, 0), 3);
+
+    for(int i=0; i<term.size(); i++){
+        *old_acc_i = *accumulator[i];
+        // watchCtxt(accumulator[i], "accumulator[i]", 508);
+
+        accumulator[i]->addCtxt(*term[i]);
+        // watchCtxt(accumulator[i], "accumulator[i]", 511);
+        accumulator[i]->addCtxt(*carry);
+        // watchCtxt(accumulator[i], "accumulator[i]", 513);
+        
+        *aux[0] = *carry;
+        aux[0]->multiplyBy(*old_acc_i);
+        // watchCtxt(aux[0], "aux[0]", 517);
+        *aux[1] = *carry;
+        aux[1]->multiplyBy(*term[i]);
+        // watchCtxt(aux[1], "aux[1]", 520);
+        *aux[2] = *old_acc_i;
+        aux[2]->multiplyBy(*term[i]);
+        // watchCtxt(aux[2], "aux[2]", 523);
+
+        delete carry;
+        carry = hom_OR(aux[0], aux[1]);
+        // watchCtxt(carry, "carry", 527);
+        delete aux[0];
+        aux[0] = hom_OR(carry, aux[2]);
+        *carry = *aux[0];
+        // watchCtxt(carry, "carry", 531);
+    }
+
+    pseudoRefreshCtxt(carry);
+
+    for(int i=term.size(); i<accumulator.size(); i++){
+        *old_acc_i = *accumulator[i];
+        // watchCtxt(accumulator[i], "accumulator[i]", 538);
+        accumulator[i]->addCtxt(*carry);
+        // watchCtxt(accumulator[i], "accumulator[i]", 540);
+        carry->multiplyBy(*old_acc_i);
+        // watchCtxt(carry, "carry", 542);
+    }
+
+    // cleanup.
+    delete carry;
+    delete old_acc_i;
+    for(int i=0; i<aux.size(); i++){
+        delete aux[i];
+    }
+}
+
+/*************************************************************************************/
+void test_homBinarySum(){
+    ENC_INT acc = encryptIntVal(vector<long>(NSLOTS, 0), 2*T_BITS);
+    int sum = 0;
+    int modulo = (int)pow(2, T_BITS)-1;
+
+    for(int i=0; i<10; i++){
+        int nr = rand() % modulo;
+        cout << nr << " ";
+        sum += nr;
+        ENC_INT num = encryptIntVal(vector<long>(NSLOTS, nr), T_BITS);
+        // cout << "Before hom_binarySum: " << decryptIntVal(acc)[0] << endl;
+        hom_binarySum(acc, num);
+        for(int j=0; j<acc.size(); j++){
+            pseudoRefreshCtxt(acc[j]);
+        }
+        // cout << "After hom_binarySum: " << decryptIntVal(acc)[0] << endl;
+        // cleanup
+        for(int j=0; j<num.size(); j++) {
+            delete num[j];
+        }
+    }
+    cout << endl << "REGULAR SUM = " << sum << endl;
+    cout << "SUM = " << decryptIntVal(acc)[0] << endl;
+
+    // cleanup.
+    for(int i=0; i<acc.size(); i++){
+        delete acc[i];
+    }
+}
+
+/*************************************************************************************/
+ENC_INT absoluteValueMetric(const ENC_HIST &h1, const ENC_HIST &h2){
+    ENC_INT sum = encryptIntVal(vector<long>(NSLOTS, 0), 2*T_BITS);
+    ENC_INT tmp_diff;
+
+    // ?? assert(h1.size() == h2.size());
+    for(int i=0; i<h1.size(); i++) {
+        for(int j=0; j<h2.size(); j++) {
+            tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
+
+            Ctxt *areEqual = compute_z(0, T_BITS, std::get<0>(h1[i]), std::get<0>(h2[j]));
+            for(int k=0; k<tmp_diff.size(); k++){
+                tmp_diff[k]->multiplyBy(*areEqual);
+            }
+            hom_binarySum(sum, tmp_diff);
+
+            // cleanup.
+            delete areEqual;
+            for(int k=0; k<tmp_diff.size(); k++){
+                delete tmp_diff[k];
+            }
+        }
+    }
+
+    return sum;
+}
+
+/*************************************************************************************/
+void test_absoluteValueMetric()
+{
+    // generate a random vector cu NSLOTS values.
+    vector<long> myvector(NSLOTS, 0);
+    for(int i=0; i<NSLOTS; i++) {
+        myvector[i] = rand() % 3;
+    }
+    // myvector is going to be encrypted in one vector<Ctxt*>
+    // so we'll shuffle this vector to have different values
+    // in the corresponding slots.
+
+    int VEC_SIZE = 5;
+
+    vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
+    for(int i=0; i<VEC_SIZE; i++) {
+        cout << myvector[0] << " ";
+        enc_nums[i] = encryptIntVal(myvector, T_BITS);
+        random_shuffle ( myvector.begin(), myvector.end(), myrandom);
+    }
+    cout << endl;
+
+    vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
+
+    cout << "freqs.size() = " << freqs.size() << endl;
+    for(int i=0; i<freqs.size(); i++) {
+        vector<long> number = decryptIntVal(std::get<0>(freqs[i]));
+        vector<long> frecventa = decryptIntVal(std::get<1>(freqs[i]).enc_bits);
+        cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
+    }
+
+    // compare the two identical frequencies.
+    ENC_INT decision = absoluteValueMetric(freqs, freqs);
+    cout << "Sum of abs diffs = " << decryptIntVal(decision)[0] << endl;
+
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
+        }
+    }
+
+    // Now, compare with a different histogram.
+    for(int i=0; i<NSLOTS; i++) {
+        myvector[i] = rand() % 3;
+    }
+
+    for(int i=0; i<VEC_SIZE; i++) {
+        cout << myvector[0] << " ";
+        enc_nums[i] = encryptIntVal(myvector, T_BITS);
+        random_shuffle ( myvector.begin(), myvector.end(), myrandom);
+    }
+    cout << endl;
+
+    vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums);
+
+    cout << "freqs2.size() = " << freqs2.size() << endl;
+    for(int i=0; i<freqs2.size(); i++) {
+        vector<long> number = decryptIntVal(std::get<0>(freqs2[i]));
+        vector<long> frecventa = decryptIntVal(std::get<1>(freqs2[i]).enc_bits);
+        cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
+    }
+
+    // compare the two identical frequencies.
+    ENC_INT decision2 = absoluteValueMetric(freqs, freqs2);
+    cout << "Sum of abs diffs = " << decryptIntVal(decision2)[0] << endl;
+
+    // cleaning up.
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
+        }
+    }
+    for(int i=0; i<decision.size(); i++) {
+        delete decision[i];
+    }
+    for(int i=0; i<decision.size(); i++) {
+        delete decision2[i];
+    }
+    for(int i=0; i<freqs.size(); i++){
+        for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
+            delete std::get<0>(freqs[i])[j];
+        }
+    }
+    for(int i=0; i<freqs2.size(); i++){
+        for(int j=0; j<std::get<0>(freqs2[i]).size(); j++){
+            delete std::get<0>(freqs2[i])[j];
+        }
+    }
+
 }
