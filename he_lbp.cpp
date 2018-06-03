@@ -611,9 +611,7 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
             refresh_ENC_INT(std::get<1>(h1[i]).enc_bits);
             refresh_ENC_INT(std::get<1>(h2[i]).enc_bits);
 
-            cout << "Entering absDifference\n";
             tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
-            cout << "Exited absDiffence\n";
 
             refresh_ENC_INT(tmp_diff);
 
@@ -624,9 +622,8 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
             for(int k=0; k<tmp_diff.size(); k++){
                 tmp_diff[k]->multiplyBy(*areEqual);
             }
-            cout << "Enterin hom_binarySum\n";
-            hom_binarySum(sum, tmp_diff);
-            cout << "Exited hom_binarySum\n";
+
+            hom_binarySum(sum, tmp_diff);         
 
             // cleanup.
             delete areEqual;
@@ -694,6 +691,16 @@ void test_absoluteValueMetric()
 
     vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums);
 
+    // cleanup.
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
+        }
+    }
+    for(int i=0; i<decision.size(); i++) {
+        delete decision[i];
+    }
+
     cout << "freqs2.size() = " << freqs2.size() << endl;
     for(int i=0; i<freqs2.size(); i++) {
         vector<long> number = decryptIntVal(std::get<0>(freqs2[i]));
@@ -706,14 +713,6 @@ void test_absoluteValueMetric()
     cout << "Sum of abs diffs = " << decryptIntVal(decision2)[0] << endl;
 
     // cleaning up.
-    for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
-        }
-    }
-    for(int i=0; i<decision.size(); i++) {
-        delete decision[i];
-    }
     for(int i=0; i<decision.size(); i++) {
         delete decision2[i];
     }
