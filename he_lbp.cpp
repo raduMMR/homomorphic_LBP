@@ -81,7 +81,7 @@ vector<Ctxt*> hom_LBP(vector<Ctxt*> enc_pixeli, vector<vector<Ctxt*>> vecini, in
 }
 
 /*************************************************************************************/
-vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
+vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(const vector<ENC_INT> &enc_nums) {
 
     // this vector will be used to count the occurence for each ENC_INT.
     // an entry of frequencies vector will hold the enc number ENC_INT and 
@@ -650,7 +650,7 @@ void test_absoluteValueMetric()
 
     int VEC_SIZE = 5;
 
-    vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
+    vector<ENC_INT> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
         cout << myvector[0] << " ";
         enc_nums[i] = encryptIntVal(myvector, T_BITS);
@@ -671,10 +671,9 @@ void test_absoluteValueMetric()
     ENC_INT decision = absoluteValueMetric(freqs, freqs);
     cout << "Sum of abs diffs = " << decryptIntVal(decision)[0] << endl;
 
-    for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
-        }
+    // cleanup.
+    for(int i=0; i<decision.size(); i++) {
+        delete decision[i];
     }
 
     // Now, compare with a different histogram.
@@ -682,24 +681,15 @@ void test_absoluteValueMetric()
         myvector[i] = rand() % 3;
     }
 
+    vector<ENC_INT> enc_nums2(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
         cout << myvector[0] << " ";
-        enc_nums[i] = encryptIntVal(myvector, T_BITS);
+        enc_nums2[i] = encryptIntVal(myvector, T_BITS);
         random_shuffle ( myvector.begin(), myvector.end(), myrandom);
     }
     cout << endl;
 
-    vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums);
-
-    // cleanup.
-    for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
-        }
-    }
-    for(int i=0; i<decision.size(); i++) {
-        delete decision[i];
-    }
+    vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums2);
 
     cout << "freqs2.size() = " << freqs2.size() << endl;
     for(int i=0; i<freqs2.size(); i++) {
@@ -716,15 +706,28 @@ void test_absoluteValueMetric()
     for(int i=0; i<decision.size(); i++) {
         delete decision2[i];
     }
-    for(int i=0; i<freqs.size(); i++){
-        for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
-            delete std::get<0>(freqs[i])[j];
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums[i][j];
         }
     }
-    for(int i=0; i<freqs2.size(); i++){
-        for(int j=0; j<std::get<0>(freqs2[i]).size(); j++){
-            delete std::get<0>(freqs2[i])[j];
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums2[i][j];
         }
     }
+
+    // BUG!! cleaning this memory results in corruption, because it was cleared previously
+    // frequency contain only pointer to enc_nums !!!!
+    // for(int i=0; i<freqs.size(); i++){
+    //     for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
+    //         delete std::get<0>(freqs[i])[j];
+    //     }
+    // }
+    // for(int i=0; i<freqs2.size(); i++){
+    //     for(int j=0; j<std::get<0>(freqs2[i]).size(); j++){
+    //         delete std::get<0>(freqs2[i])[j];
+    //     }
+    // }
 
 }

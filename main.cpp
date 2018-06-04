@@ -190,10 +190,8 @@ void test_Difference(){
     }
 }
 
-int main(int argc, char **argv) {
 
-    // test_Difference();
-    // return 0;
+int main(int argc, char **argv) {
 
     ArgMapping amap;
 

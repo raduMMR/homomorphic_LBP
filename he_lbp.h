@@ -43,7 +43,7 @@ vector<Ctxt*> hom_LBP(vector<Ctxt*> enc_pixeli, vector<vector<Ctxt*>> vecini, in
  * @param enc_nums - vector of encrypted numbers on bits representation
  * @return - the number of occurences for each number in the vector
  */
-vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums);
+vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(const vector<ENC_INT> &enc_nums);
 
 
 // returns the absolute value of the difference a-b, |a-b|
