@@ -623,6 +623,7 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
             for(int k=0; k<tmp_diff.size(); k++){
                 tmp_diff[k]->multiplyBy(*areEqual);
             }
+
             hom_binarySum(sum, tmp_diff);
 
             // cleanup.
@@ -643,14 +644,10 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
 /*************************************************************************************/
 void test_absoluteValueMetric()
 {
-    // generate a random vector cu NSLOTS values.
     vector<long> myvector(NSLOTS, 0);
     for(int i=0; i<NSLOTS; i++) {
         myvector[i] = rand() % 3;
     }
-    // myvector is going to be encrypted in one vector<Ctxt*>
-    // so we'll shuffle this vector to have different values
-    // in the corresponding slots.
 
     int VEC_SIZE = 5;
 
@@ -662,71 +659,23 @@ void test_absoluteValueMetric()
     }
     cout << endl;
 
-    vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
+  vector<tuple<vector<Ctxt*>, HE_INT>> freqs = hom_counter(enc_nums);
 
-    cout << "freqs.size() = " << freqs.size() << endl;
+   cout << "freqs.size() = " << freqs.size() << endl;
     for(int i=0; i<freqs.size(); i++) {
         vector<long> number = decryptIntVal(std::get<0>(freqs[i]));
         vector<long> frecventa = decryptIntVal(std::get<1>(freqs[i]).enc_bits);
         cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
     }
 
-    // compare the two identical frequencies.
-    ENC_INT decision = absoluteValueMetric(freqs, freqs);
-    cout << "Sum of abs diffs = " << decryptIntVal(decision)[0] << endl;
-
     for(int i=0; i<VEC_SIZE; i++) {
         for(int j=0; j<T_BITS; j++) {
             delete enc_nums[i][j];
         }
     }
-
-    // Now, compare with a different histogram.
-    for(int i=0; i<NSLOTS; i++) {
-        myvector[i] = rand() % 3;
-    }
-
-    for(int i=0; i<VEC_SIZE; i++) {
-        cout << myvector[0] << " ";
-        enc_nums[i] = encryptIntVal(myvector, T_BITS);
-        random_shuffle ( myvector.begin(), myvector.end(), myrandom);
-    }
-    cout << endl;
-
-    vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums);
-
-    cout << "freqs2.size() = " << freqs2.size() << endl;
-    for(int i=0; i<freqs2.size(); i++) {
-        vector<long> number = decryptIntVal(std::get<0>(freqs2[i]));
-        vector<long> frecventa = decryptIntVal(std::get<1>(freqs2[i]).enc_bits);
-        cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
-    }
-
-    // compare the two identical frequencies.
-    ENC_INT decision2 = absoluteValueMetric(freqs, freqs2);
-    cout << "Sum of abs diffs = " << decryptIntVal(decision2)[0] << endl;
-
-    // cleaning up.
-    for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
-        }
-    }
-    for(int i=0; i<decision.size(); i++) {
-        delete decision[i];
-    }
-    for(int i=0; i<decision.size(); i++) {
-        delete decision2[i];
-    }
-    for(int i=0; i<freqs.size(); i++){
+   /* for(int i=0; i<freqs.size(); i++){
         for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
             delete std::get<0>(freqs[i])[j];
         }
-    }
-    for(int i=0; i<freqs2.size(); i++){
-        for(int j=0; j<std::get<0>(freqs2[i]).size(); j++){
-            delete std::get<0>(freqs2[i])[j];
-        }
-    }
-
+    }*/
 }
