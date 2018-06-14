@@ -34,24 +34,12 @@ public:
     ~EncRegion();
 };
 
-// encrypted number of occurences of the lbp_code.
-class NumberOfOccurences{
-public:
-
-    // only reference. DO NOT FREE this vector.
-    vector<Ctxt*> lbp_code;
-
-    Ctxt* occurence_hits;
-
-    ~NumberOfOccurences();
-};
-
 class EncHistogram{
 public:
     EncHistogram();
 
-    // vector<Ctxt*> contains a vector of tuples ( enc(lbp_code), enc(nb_of_occurences) )
-    vector<NumberOfOccurences> enc_hist;
+// number of occurences for each code LBP. enc_hist[i] - nb of occurence for code i, i=0..255
+    vector<Ctxt*> enc_hist;
 
     // for each lbp code from enc_hist compute the number of occurences.
     // @param lbp_codes is matrix
