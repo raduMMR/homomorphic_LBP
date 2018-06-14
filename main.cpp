@@ -1,71 +1,16 @@
 #include <iostream>
 #include "basic_primitives.h"
 #include "he_lbp.h"
+#include "HE_FR_LBP.h"
 #include <vector>
 #include <tuple>
 using namespace std;
 
 class DivisionLookupTable {
     public:
-
     // < <divident, divisor>, quotient>, where quotient = divident/divisor
     vector<tuple<tuple<long, long>, long>> table;
 };
-
-bool isNewResult(vector<double> &vals, double entry){
-    bool isNew = true;
-    for(int i=0; i<vals.size(); i++){
-        if(vals[i] == entry){
-            isNew = false;
-            break;
-        }
-    }
-    return isNew;
-}
-
-void rangeOfValues(){
-    vector<double> vals;
-
-    double val; 
-
-    for(double i=0; i<256; i++){
-        for(double j=0; j<256; j++){
-            if( (i+j) != 0 ){
-                val = ((i-j)*(i-j)/(i+j));
-                if( i==3 && j==2){
-                    cout << "(3, 2) => " << val << endl;
-                }
-
-                if(isNewResult(vals, val) == true ) {
-                    vals.push_back(val);
-                    if( i==3 && j==2){
-                        cout << "(3, 2) => " << val << endl;
-                    }
-                }
-            }
-        }
-    }
-
-    cout << "VALORI DIFERITE = " << vals.size() << endl;
-
-    // long c;
-    // cin >> c;
-    // for(int i=0; i<vals.size(); i++){
-    //     cout << vals[i] << " ";
-    // }
-    // int contor = 0;
-    // for(int i=0; i<256; i++){
-    //     for(int j=0; j<256; j++){
-    //         if( (i+j) != 0 ){
-    //             val = ((i-j)*(i-j)/(i+j));
-    //             if( val == c) {
-    //                 contor++;
-    //             }
-    //         }
-    //     }
-    // }
-    // cout << "contor = " << contor << endl;
-}
 
 void test_Ctxt_Add(){
     vector<long> a(NSLOTS, 0);
@@ -190,6 +135,34 @@ void test_Difference(){
     }
 }
 
+void test_mult_time(){
+    Ctxt* c1 = encryptBitVal(vector<long>(NSLOTS, 1));
+    Ctxt* c2 = encryptBitVal(vector<long>(NSLOTS, 1));
+    Ctxt* c3 = encryptBitVal(vector<long>(NSLOTS, 0));
+
+    Ctxt* areEqual = compute_z(0, 1, vector<Ctxt*>(1, c1), vector<Ctxt*>(1, c2));
+
+    cout << decryptBitVal(areEqual)[0] << endl;
+
+    delete areEqual;
+    areEqual = compute_z(0, 1, vector<Ctxt*>(1, c1), vector<Ctxt*>(1, c3));
+    cout << decryptBitVal(areEqual)[0] << endl;
+
+    delete areEqual;
+    delete c3;
+
+    // int i = 0;
+    // do {
+    //     c1->multiplyBy(*c2);
+    //     i++;
+    // }
+    // while(decryptBitVal(c1)[0] == 1);
+    // cout << "Numar de inmultiri = " << i << endl;
+
+    delete c1;
+    delete c2;
+}
+
 
 int main(int argc, char **argv) {
 
@@ -279,11 +252,7 @@ int main(int argc, char **argv) {
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    // test_hom_counter();
-    // test_absDifference();
-    // test_Ctxt_Add();
-    // test_homBinarySum();
-    test_absoluteValueMetric();
+    test_HE_FR_LBP();
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
     /************* TESTING SPACE *********************************/

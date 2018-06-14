@@ -613,6 +613,8 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
 
             tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
 
+            decryptIntVal(tmp_diff)[0];
+
             refresh_ENC_INT(tmp_diff);
 
             refresh_ENC_INT(std::get<0>(h1[i]));
