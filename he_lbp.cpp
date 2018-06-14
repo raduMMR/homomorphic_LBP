@@ -81,7 +81,7 @@ vector<Ctxt*> hom_LBP(vector<Ctxt*> enc_pixeli, vector<vector<Ctxt*>> vecini, in
 }
 
 /*************************************************************************************/
-vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(vector<ENC_INT> &enc_nums) {
+vector<tuple<vector<Ctxt*>, HE_INT>> hom_counter(const vector<ENC_INT> &enc_nums) {
 
     // this vector will be used to count the occurence for each ENC_INT.
     // an entry of frequencies vector will hold the enc number ENC_INT and 
@@ -451,7 +451,7 @@ void test_absDifference(){
     vector<long> b(NSLOTS, 0);
 
 
-    for(int i=0; i<10; i++){
+    for(int i=0; i<20; i++){
         for(int j=0; j<NSLOTS; j++){
             a[j] = random()%256;
             b[j] = random()%256;
@@ -472,7 +472,9 @@ void test_absDifference(){
                 cout << "|" << a[j] << " - " << b[j] << "| = " << result[j] << endl;
                 success = false;
                 break;
-            }
+            } else {
+		cout << result[j] << ", " << abs(a[j]-b[j]) << endl;
+	    }
         }
 
         // cleanup.
@@ -602,6 +604,7 @@ void refresh_ENC_INT(ENC_INT &enc_int) {
 ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
     ENC_INT sum = encryptIntVal(vector<long>(NSLOTS, 0), 2*T_BITS);
     ENC_INT tmp_diff;
+    ENC_INT enc_zero = encryptIntVal(vector<long>(NSLOTS, 0), T_BITS);
 
     // ?? assert(h1.size() == h2.size());
     for(int i=0; i<h1.size(); i++) {
@@ -613,6 +616,10 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
 
             tmp_diff = absDifference(std::get<1>(h1[i]).getNumber(), std::get<1>(h2[j]).getNumber());
 
+/*		cout << "frecventele\n";
+ 	    cout << "|" << decryptIntVal(std::get<1>(h1[i]).getNumber())[0] << " - "  << decryptIntVal(std::get<1>(h2[j]).getNumber())[0] << "| = "
+		<< decryptIntVal(tmp_diff)[0] << endl;*/
+
             refresh_ENC_INT(tmp_diff);
 
             refresh_ENC_INT(std::get<0>(h1[i]));
@@ -623,20 +630,40 @@ ENC_INT absoluteValueMetric(ENC_HIST &h1, ENC_HIST &h2){
             for(int k=0; k<tmp_diff.size(); k++){
                 tmp_diff[k]->multiplyBy(*areEqual);
             }
+// cout << "Dupa mult cu equal, tmp = " << decryptIntVal(tmp_diff)[0] << endl;
+// cout << "Pentru nr: " << decryptIntVal(std::get<0>(h1[i]))[0] << ", " << decryptIntVal(std::get<0>(h2[j]))[0] << endl;
 
+// and if the frequency is not 0
+Ctxt* f1_is_zero = compute_z(0, T_BITS, std::get<1>(h1[i]).getNumber(), enc_zero);
+Ctxt* f2_is_zero = compute_z(0, T_BITS, std::get<1>(h2[j]).getNumber(), enc_zero);
+// cout << "inainte de f1*f2\n";
+pseudoRefreshCtxt(f1_is_zero);
+pseudoRefreshCtxt(f2_is_zero);
+f1_is_zero->multiplyBy(*f2_is_zero);
+// cout << "dupa f1*f2\n";
+for(int k=0; k<tmp_diff.size(); k++){
+	tmp_diff[k]->multiplyBy(*f1_is_zero);
+}
+// cout << "dupa tmp_diff * f1 *f2\n";
             hom_binarySum(sum, tmp_diff);
-
+//	    cout << "sum = " << decryptIntVal(sum)[0] << endl;
             // cleanup.
+delete f1_is_zero; delete f2_is_zero;
             delete areEqual;
             for(int k=0; k<tmp_diff.size(); k++){
                 delete tmp_diff[k];
             }
 
-	cout << "Step i = " << i << ", j = " << j << endl;
+            // cout << "Step i = " << i << ", j = " << j << endl;
         }
     }
 
-	cout << "Before return sum\n";
+// another cleanup
+for(int i=0; i<enc_zero.size(); i++){
+	delete enc_zero[i];
+}
+
+//	cout << "Before return sum\n";
 
     return sum;
 }
@@ -651,7 +678,7 @@ void test_absoluteValueMetric()
 
     int VEC_SIZE = 5;
 
-    vector<vector<Ctxt*>> enc_nums(VEC_SIZE);
+    vector<ENC_INT> enc_nums(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
         cout << myvector[0] << " ";
         enc_nums[i] = encryptIntVal(myvector, T_BITS);
@@ -668,14 +695,74 @@ void test_absoluteValueMetric()
         cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
     }
 
+    // compare the two identical frequencies.
+    ENC_INT decision = absoluteValueMetric(freqs, freqs);
+    cout << "Sum of abs diffs = " << decryptIntVal(decision)[0] << endl;
+
+    // cleanup.
+cout << "Stergere decision ...\n";
+    for(int i=0; i<decision.size(); i++) {
+        delete decision[i];
+    }
+
+    // Now, compare with a different histogram.
+/*    for(int i=0; i<NSLOTS; i++) {
+        myvector[i] = rand() % 3;
+    }
+
+    vector<ENC_INT> enc_nums2(VEC_SIZE);
     for(int i=0; i<VEC_SIZE; i++) {
-        for(int j=0; j<T_BITS; j++) {
-            delete enc_nums[i][j];
+        cout << myvector[0] << " ";
+        enc_nums2[i] = encryptIntVal(myvector, T_BITS);
+        random_shuffle ( myvector.begin(), myvector.end(), myrandom);
+    }
+    cout << endl;
+
+    vector<tuple<vector<Ctxt*>, HE_INT>> freqs2 = hom_counter(enc_nums2);
+
+    cout << "freqs2.size() = " << freqs2.size() << endl;
+    for(int i=0; i<freqs2.size(); i++) {
+        vector<long> number = decryptIntVal(std::get<0>(freqs2[i]));
+        vector<long> frecventa = decryptIntVal(std::get<1>(freqs2[i]).enc_bits);
+        cout << "Numar = " << number[0] << ", Frecventa =  " << frecventa[0] << endl;
+    }
+
+    // compare the two identical frequencies.
+    ENC_INT decision2 = absoluteValueMetric(freqs, freqs2);
+    cout << "Sum of abs diffs = " << decryptIntVal(decision2)[0] << endl;
+
+    // cleaning up.
+cout << "Stergere decision2\n";
+    for(int i=0; i<decision.size(); i++) {
+        delete decision2[i];
+    }*/
+// cout << "Stergere deciosion 2 completex\n";
+cout << "Stergere enc_nums ...\n";
+    for(int i=0; i<enc_nums.size(); i++) {
+        for(int j=0; j<enc_nums[i].size(); j++) {
+	cout<< "deleting enc_nums[" << i << "][" << j << "]\n";     
+       delete enc_nums[i][j];
         }
     }
-   /* for(int i=0; i<freqs.size(); i++){
-        for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
-            delete std::get<0>(freqs[i])[j];
+cout << "Stergere enc_nums completed.\n";
+/*cout << "Stergere enc_nums2 ...\n";
+    for(int i=0; i<VEC_SIZE; i++) {
+        for(int j=0; j<T_BITS; j++) {
+            delete enc_nums2[i][j];
         }
-    }*/
+    }
+cout << "Stergere enc_nums2 completed.\n";*/
+    // BUG!! cleaning this memory results in corruption, because it was cleared previously
+    // frequency contain only pointer to enc_nums !!!!
+    // for(int i=0; i<freqs.size(); i++){
+    //     for(int j=0; j<std::get<0>(freqs[i]).size(); j++){
+    //         delete std::get<0>(freqs[i])[j];
+    //     }
+    // }
+    // for(int i=0; i<freqs2.size(); i++){
+    //     for(int j=0; j<std::get<0>(freqs2[i]).size(); j++){
+    //         delete std::get<0>(freqs2[i])[j];
+    //     }
+    // }
+
 }
