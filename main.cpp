@@ -12,6 +12,18 @@ class DivisionLookupTable {
     vector<tuple<tuple<long, long>, long>> table;
 };
 
+
+void allocCtxt(int ns){
+
+cout << "ns = " << ns << endl;
+	int i=0;
+	while(true){
+		Ctxt* ctxt = encryptBitVal(vector<long>(ns, 1));
+		cout << i << endl;
+		i++;
+	}
+}
+
 void test_Ctxt_Add(){
     vector<long> a(NSLOTS, 0);
     vector<long> b(NSLOTS, 1);
@@ -252,7 +264,8 @@ int main(int argc, char **argv) {
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    test_HE_FR_LBP();
+    // test_HE_FR_LBP();
+	allocCtxt(s);
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
     /************* TESTING SPACE *********************************/

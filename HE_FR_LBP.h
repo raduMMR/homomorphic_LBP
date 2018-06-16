@@ -49,7 +49,7 @@ public:
                         ...              ...
                 [                    ]  slot_4096  => LBP code for pixel_4096
     */
-    void computeNbOfOccurences(vector<Ctxt*> lbp_codes);
+    void computeNbOfOccurences(vector<Ctxt*> lbp_codes, vector<long> clear_hist);
 
     ~EncHistogram();
 };

@@ -50,20 +50,29 @@ EncHistogram::~EncHistogram(){
     }
 }
 
-void EncHistogram::computeNbOfOccurences(vector<Ctxt*> LBP_codes){
-cout << "compute histogram ...\n";
+void EncHistogram::computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long> histogram){
     for(int i=0; i<256; i++){
 	vector<Ctxt*> lbp_code = encryptIntVal(vector<long>(NUMBER_OF_PIXELS,/*LBP_code=*/ i), /*T_BITS=*/8);
 
-        enc_hist[i] = compute_z(0, 8, lbp_code, LBP_codes);
+        //enc_hist[i] = compute_z(0, 8, lbp_code, LBP_codes);
+
+	Ctxt *eh = compute_z(0, 8, lbp_code, LBP_codes);
 
 	for(int j=0; j<lbp_code.size(); j++){
 		delete lbp_code[j];
 	}
+	
+	vector<long> dec_hist = decryptBitVal(eh);
+	delete eh;
 
-	cout << "Step " << i << " computed\n";
+	int hist_val = 0;
+	for(int j=0; j<NUMBER_OF_PIXELS; j++){
+		hist_val += dec_hist[j];
+	}
+	if(hist_val != histogram[i]){
+		cout << "Hist diff " << i << endl;
+	} else { cout << "Step " << i << " completed.\n"; }
     }
-cout << "histogram computed\n";
 }
 
 EncRegion* ImageProcessor::encryptRegion(vector<long> pixels, vector<vector<long>> neighbours){
@@ -166,13 +175,13 @@ void ImageProcessor::encryptImage(uint8_t **image){
 	cout << "clear histogram done\n";
 
             EncHistogram eh;
-            eh.computeNbOfOccurences(LBP_codes);
+            eh.computeNbOfOccurences(LBP_codes, plain_hist);
             assert(plain_hist.size() == 256);
-            for(int z=0; z<plain_hist.size(); z++){
+           /* for(int z=0; z<plain_hist.size(); z++){
                 if(plain_hist[z] != decryptBitVal(eh.enc_hist[z])[0] ){
                     cout << "Histograme diferite\n";
                 }
-            }
+            }*/
             cout << "Histograme comparate.\n";
 
             // cleanup.
@@ -194,7 +203,7 @@ EncHistogram ImageProcessor::computeHistogram4Region(int region_id){
 
     EncHistogram eh;
 
-    eh.computeNbOfOccurences(LBP_codes);
+    eh.computeNbOfOccurences(LBP_codes, vector<long>(NUMBER_OF_PIXELS, 0));
 
     return eh;
 }
