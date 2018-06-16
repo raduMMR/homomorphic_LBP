@@ -88,8 +88,6 @@ public:
 
     EncHistogram computeHistogram4Region(int region_id);
 
-    void compareHistograms();
-
     ~ImageProcessor(){
         for(int i=0; i<encrypted_regions.size(); i++){
             delete encrypted_regions[i];

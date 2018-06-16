@@ -79,8 +79,8 @@ EncRegion* ImageProcessor::encryptRegion(vector<long> pixels, vector<vector<long
 
 // compute the LBP codes in the clear for comparison.
 vector<long> clearLBPcodes(vector<long> pixels, vector<vector<long>> neighbours){
-    vector<long> lbp_codes(NSLOTS);
-    for(int i=0; i<NSLOTS; i++) {
+    vector<long> lbp_codes(1024);
+    for(int i=0; i<1024; i++) {
         lbp_codes[i] = 0;
         for(int j=0; j<8; j++) {
             lbp_codes[i] |= (neighbours[j][i] >= pixels[i]) << j;
