@@ -3,6 +3,7 @@
 #include "basic_primitives.h"
 #include "he_lbp.h"
 
+#define NUMBER_OF_PIXELS 1024
 
 void EncRegion::cloneRegion(const EncRegion& copy){
     for(int i=0; i<copy.enc_pixels.size(); i++){
@@ -38,29 +39,39 @@ EncRegion::~EncRegion(){
     cout << "Called EndRegion destructor\n";
 }
 
-NumberOfOccurences::~NumberOfOccurences(){
-    delete occurence_hits;
-}
-
 EncHistogram::EncHistogram(){
-    enc_hist = vector<NumberOfOccurences>(256);
+    enc_hist = vector<Ctxt*>(256);
     // all lbp_codes from 0 to 255.
-    for(int i=0; i<256; i++){
-        enc_hist[i].lbp_code = encryptIntVal(vector<long>(1024, i), 8);
-    }
 }
 
 EncHistogram::~EncHistogram(){
     for(int i=0; i<enc_hist.size(); i++){
-        for(int j=0; j<enc_hist[i].lbp_code.size(); j++){
-            delete enc_hist[i].lbp_code[j];
-        }
+            delete enc_hist[i];
     }
 }
 
-void EncHistogram::computeNbOfOccurences(vector<Ctxt*> LBP_codes){
+void EncHistogram::computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long> histogram){
     for(int i=0; i<256; i++){
-        enc_hist[i].occurence_hits = compute_z(0, 8, enc_hist[i].lbp_code, LBP_codes);
+	vector<Ctxt*> lbp_code = encryptIntVal(vector<long>(NUMBER_OF_PIXELS,/*LBP_code=*/ i), /*T_BITS=*/8);
+
+        //enc_hist[i] = compute_z(0, 8, lbp_code, LBP_codes);
+
+	Ctxt *eh = compute_z(0, 8, lbp_code, LBP_codes);
+
+	for(int j=0; j<lbp_code.size(); j++){
+		delete lbp_code[j];
+	}
+	
+	vector<long> dec_hist = decryptBitVal(eh);
+	delete eh;
+
+	int hist_val = 0;
+	for(int j=0; j<NUMBER_OF_PIXELS; j++){
+		hist_val += dec_hist[j];
+	}
+	if(hist_val != histogram[i]){
+		cout << "Hist diff " << i << endl;
+	} else { cout << "Step " << i << " completed.\n"; }
     }
 }
 
@@ -79,8 +90,13 @@ EncRegion* ImageProcessor::encryptRegion(vector<long> pixels, vector<vector<long
 
 // compute the LBP codes in the clear for comparison.
 vector<long> clearLBPcodes(vector<long> pixels, vector<vector<long>> neighbours){
+<<<<<<< HEAD
     vector<long> lbp_codes(1024);
     for(int i=0; i<1024; i++) {
+=======
+    vector<long> lbp_codes(NUMBER_OF_PIXELS);
+    for(int i=0; i<NUMBER_OF_PIXELS; i++) {
+>>>>>>> be047bb8c648a38be90f741d91f4759e27dfc54f
         lbp_codes[i] = 0;
         for(int j=0; j<8; j++) {
             lbp_codes[i] |= (neighbours[j][i] >= pixels[i]) << j;
@@ -107,7 +123,7 @@ vector<long> computeClearHistogram(vector<long> lbp_codes){
 }
 
 void ImageProcessor::encryptImage(uint8_t **image){
-    assert(this->nslots == 1024);
+    assert(this->nslots == NUMBER_OF_PIXELS);
     // for an image of size 256x256 we split it in 16 regions, 4x4
     // such that a ctxt contain the pixels from an entire region, 1024
 
@@ -115,9 +131,9 @@ void ImageProcessor::encryptImage(uint8_t **image){
     // the image with zeroes such that every pixel has 8 neighbours
     for(int i=0; i<8; i++){
         for(int j=0; j<8; j++){
-            vector<long> pixels(this->nslots);
+            vector<long> pixels(NUMBER_OF_PIXELS);
             int k=0;
-            vector<vector<long>> neighbours(8, vector<long>(this->nslots));
+            vector<vector<long>> neighbours(8, vector<long>(NUMBER_OF_PIXELS));
             for(int line=1+256/8*i; line<256/8*(i+1)+1; line++){
                 for(int col=1+256/8*j; col<256/8*(j+1)+1; col++){
                     pixels[k] = image[line][col];
@@ -152,22 +168,25 @@ void ImageProcessor::encryptImage(uint8_t **image){
             for(int z=0; z<plain_lbp.size(); z++){
                 if(plain_lbp[z] != dec_lbp[z]){
                     cout << "Coduri LBP diferite.\n";
+			cout << "Index = " << z << ", plain = " << plain_lbp[z] << ", enc = " << dec_lbp[z] << endl;
                     break;
                 }
             }
             cout << "Coduri LBP calculate.\n";
-
+		delete er;
             // compare the two histograms.
             cout << "Se compara histogramele ...\n";
             vector<long> plain_hist = computeClearHistogram(plain_lbp);
+	cout << "clear histogram done\n";
+
             EncHistogram eh;
-            eh.computeNbOfOccurences(LBP_codes);
+            eh.computeNbOfOccurences(LBP_codes, plain_hist);
             assert(plain_hist.size() == 256);
-            for(int z=0; z<plain_hist.size(); z++){
-                if(plain_hist[z] != decryptBitVal(eh.enc_hist[z].occurence_hits)[0] ){
+           /* for(int z=0; z<plain_hist.size(); z++){
+                if(plain_hist[z] != decryptBitVal(eh.enc_hist[z])[0] ){
                     cout << "Histograme diferite\n";
                 }
-            }
+            }*/
             cout << "Histograme comparate.\n";
 
             // cleanup.
@@ -189,7 +208,7 @@ EncHistogram ImageProcessor::computeHistogram4Region(int region_id){
 
     EncHistogram eh;
 
-    eh.computeNbOfOccurences(LBP_codes);
+    eh.computeNbOfOccurences(LBP_codes, vector<long>(NUMBER_OF_PIXELS, 0));
 
     return eh;
 }
@@ -213,7 +232,7 @@ void test_HE_FR_LBP(){
 
     ImageProcessor ip;
     if(NSLOTS >= 1024)
-        ip.setNumberOfSlots(1024);
+        ip.setNumberOfSlots(NUMBER_OF_PIXELS);
 
     // cout << "Se cripteaza imaginea ...\n";
     ip.encryptImage(image);
