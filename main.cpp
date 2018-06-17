@@ -6,6 +6,12 @@
 #include <tuple>
 using namespace std;
 
+
+void testCompare(){
+	ImageProcessor ip;
+	// ip.computeHistogram4Region((char*)"6.enc", (char*)"6.hist");
+}
+
 class DivisionLookupTable {
     public:
     // < <divident, divisor>, quotient>, where quotient = divident/divisor
@@ -311,16 +317,14 @@ int main(int argc, char **argv) {
     setDryRun(dry);
 
     cout << "Setup context ...\n";
-    setGlobalVariables(p, r, d, c, w, L, m, gens, ords); writeContextToFile("keys.txt", d, p);
-    // readContextFromFile("keys.txt");
+    // setGlobalVariables(p, r, d, c, w, L, m, gens, ords); writeContextToFile("keys.txt", d, p);
+    readContextFromFile("keys.txt");
     cout << "Finished context setup.\n";
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    test_HE_FR_LBP();
-	// allocCtxt(s);
-    // testFileStreamsForCtxt();
-    // testKeyToFile(d, p);
+    //test_HE_FR_LBP();
+	testCompare();
     clock_t end = clock();
     cout << "TIME: " << clock_diff(begin, end) << " seconds.\n";
     /************* TESTING SPACE *********************************/

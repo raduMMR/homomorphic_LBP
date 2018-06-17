@@ -114,8 +114,10 @@ void ImageProcessor::computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long>
     assert(localHistFile.is_open());
 
     for(int i=0; i<256; i++){
+cout << "Before encryptIntVal\n";
         vector<Ctxt*> lbp_code = encryptIntVal(vector<long>(NUMBER_OF_PIXELS,/*LBP_code=*/ i), /*T_BITS=*/8);
-
+cout << "After encryptIntVal\n";
+ 
         Ctxt *eh = compute_z(0, 8, lbp_code, LBP_codes);
 
         for(int j=0; j<lbp_code.size(); j++){

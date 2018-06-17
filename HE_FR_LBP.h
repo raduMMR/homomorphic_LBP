@@ -18,11 +18,11 @@ class ImageProcessor{
 
     void encryptRegion(vector<long> pixels, vector<vector<long>> neighbours, char *regionFile);
 
-    void computeHistogram4Region(char *regionFile, char *regionHist);
-
     void computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long> histogram, char *filename);
 
 public:
+
+    void computeHistogram4Region(char *regionFile, char *regionHist);
 
     void setNumberOfSlots(int nslots){ this->nslots = nslots; }
 
