@@ -19,6 +19,7 @@ EncryptedArray *ea;
 bool noPrint = false;
 int NSLOTS = 0;
 int T_BITS = 8;
+ZZX G;
 
 /*************************************************************************************/
 double clock_diff(const clock_t &t1, const clock_t &t2){
@@ -52,6 +53,51 @@ void setGlobalVariables(long p, long r, long d, long c, long w,
     NSLOTS = ea->size();
 	cout << "NSLOTS = " << NSLOTS << endl;
 }
+
+/*************************************************************************************/
+void writeContextToFile(const char *filename, int d, int p){
+	fstream keyFile(filename, fstream::out|fstream::trunc);
+
+	writeContextBase(keyFile, *context);
+    keyFile << *context << endl;
+	keyFile << *secretKey << endl;
+	keyFile << d << endl;
+	keyFile << p << endl;
+
+	keyFile.close();
+	keyFile.flush();
+}
+
+/*************************************************************************************/
+void readContextFromFile(const char *filename){
+	if(context != NULL) delete context;
+	if(secretKey != NULL) delete secretKey;
+	if( ea != NULL) delete ea;
+
+	fstream keyFile(filename, fstream::in);
+
+    unsigned long m1, p1, r1;
+    vector<long> gens, ords;
+    readContextBase(keyFile, m1, p1, r1, gens, ords);
+
+	context = new FHEcontext(m1, p1, r1, gens, ords);
+	keyFile >> *context;
+	secretKey = new FHESecKey(*context);
+	keyFile >> secretKey;
+
+	int d, p;
+	keyFile >> d;
+	keyFile >> p;
+	ZZX G;
+    if (d == 0)
+        G = context->alMod.getFactorsOverZZ()[0];
+    else
+        G = makeIrredPoly(p, d); 
+	ea = new EncryptedArray(*context, G);
+
+	keyFile.close();
+}
+
 
 /*************************************************************************************/
 void cleanGlobalVariables() {

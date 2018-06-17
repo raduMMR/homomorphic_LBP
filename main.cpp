@@ -12,10 +12,37 @@ class DivisionLookupTable {
     vector<tuple<tuple<long, long>, long>> table;
 };
 
+void testFileStreamsForCtxt(){
+
+    fstream outStream("test.ctxt", fstream::out|fstream::trunc);
+
+    for(int i=0; i<25; i++){
+        int bit = rand() % 2;
+        cout << bit << " ";
+        Ctxt * ctxt = encryptBitVal(vector<long>(NSLOTS, bit));
+        outStream << *ctxt << endl;
+        delete ctxt;
+    }
+    cout << endl;
+
+    outStream.close();
+    outStream.flush();
+
+    Ctxt* ctxt = encryptBitVal(vector<long>(NSLOTS, 0));
+
+    fstream inStream("test.ctxt", fstream::in);
+    for(int i=0; i<25; i++){
+        inStream >> *ctxt;
+        cout << decryptBitVal(ctxt)[0] << " ";
+    }
+    cout << endl;
+    inStream.close();
+}
+
 
 void allocCtxt(int ns){
 
-cout << "ns = " << ns << endl;
+    cout << "ns = " << ns << endl;
 	int i=0;
 	while(true){
 		Ctxt* ctxt = encryptBitVal(vector<long>(ns, 1));
@@ -176,6 +203,31 @@ void test_mult_time(){
 }
 
 
+void testKeyToFile(int d, int p){
+    writeContextToFile("keys.txt", d, p);
+    
+    fstream keyFile(filename, fstream::in)
+    unsigned long m1, p1, r1;
+    vector<long> gens, ords;
+    readContextBase(keyFile, m1, p1, r1, gens, ords);
+    FHEcontext tmpContext(m1, p1, r1, gens, ords);
+	keyFile >> tmpContext;
+	assert (*context == tmpContext);
+    cerr << ": context matches input\n";
+	FHESecKey testKey(*context);
+	keyFile >> testKey;
+	assert(testKey == *secretKey);
+    cerr << "secret key matches input\n";
+    int d1, p1;
+    keyFile >> d1;
+    keyFile >> p1;
+
+    assert(d1 == d); cout << " d: ok\n";
+    assert(p1 == p); cout << " p: ok\n";
+    
+    keyFile.close();
+}
+
 int main(int argc, char **argv) {
 
     ArgMapping amap;
@@ -265,7 +317,9 @@ int main(int argc, char **argv) {
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
     // test_HE_FR_LBP();
-	allocCtxt(s);
+	// allocCtxt(s);
+    // testFileStreamsForCtxt();
+    testKeyToFile(d, p);
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
     /************* TESTING SPACE *********************************/

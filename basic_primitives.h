@@ -38,3 +38,8 @@ Ctxt* compute_z (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& c
 Ctxt* compute_t (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y);
 // greater than or equal
 Ctxt* compute_s (int i, int j, const vector<Ctxt*>& ct_x,const vector<Ctxt*>& ct_y);
+
+
+void writeContextToFile(const char *filename, int d, int p);
+
+void readContextFromFile(const char *filename);
