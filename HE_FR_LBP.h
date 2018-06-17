@@ -26,7 +26,7 @@ public:
 
     void setNumberOfSlots(int nslots){ this->nslots = nslots; }
 
-    void encryptImage(uint8_t **image, char **regionFiles);
+    void encryptImage(uint8_t **image, char **histFiles);
 
     void computeHistogram(char **regionFiles, char **histFiles);
 };

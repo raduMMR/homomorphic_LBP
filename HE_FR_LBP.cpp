@@ -201,7 +201,7 @@ vector<long> computeClearHistogram(vector<long> lbp_codes){
     return histogram;
 }
 
-void ImageProcessor::encryptImage(uint8_t **image, char **regionFiles){
+void ImageProcessor::encryptImage(uint8_t **image, char **histFiles){
     assert(this->nslots == NUMBER_OF_PIXELS);
     // for an image of size 256x256 we split it in 64 regions, 4x4
     // such that a ctxt contain the pixels from an entire region, 1024
@@ -233,7 +233,11 @@ void ImageProcessor::encryptImage(uint8_t **image, char **regionFiles){
 
             // encrypt the region
             cout << "se cripteaza regiunea (" << i << ", " << j << ")\n";
-            encryptRegion(pixels, neighbours, regionFiles[i*8+j]);      
+            encryptRegion(pixels, neighbours, "region.enc");      
+
+            // in production, the next call could not be here, but for speeding
+            // testing is good
+            this->computeHistogram4Region("region.enc", histFiles[i*8+j]);
             cout << "Regiune criptata\n";
         }
     }
@@ -355,13 +359,13 @@ void test_HE_FR_LBP(){
     ImageProcessor ip;
     ip.setNumberOfSlots(NUMBER_OF_PIXELS);
 
-    cout << "Se cripteaza imaginea ...\n";
-    ip.encryptImage(image, regionFiles);
-    cout << "Imagine criptata.\n";
+    // cout << "Se cripteaza imaginea ...\n";
+    ip.encryptImage(image, histFiles);
+    // cout << "Imagine criptata.\n";
 
-    cout << "Se calculeaza histograma imaginii ...\n";
-    ip.computeHistogram(regionFiles, histFiles);
-    cout << "Histograma calculata.\n";
+    // cout << "Se calculeaza histograma imaginii ...\n";
+    // ip.computeHistogram(regionFiles, histFiles);
+    // cout << "Histograma calculata.\n";
 
 
     cout << "Se compara doua histograme identice ...\n";
