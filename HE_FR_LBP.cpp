@@ -353,11 +353,18 @@ void test_HE_FR_LBP(){
     ImageProcessor ip;
     ip.setNumberOfSlots(NUMBER_OF_PIXELS);
 
+    cout << "Se cripteaza imaginea ...\n";
     ip.encryptImage(image, regionFiles);
+    cout << "Imagine criptata.\n";
 
+    cout << "Se calculeaza histograma imaginii ...\n";
     ip.computeHistogram(regionFiles, histFiles);
+    cout << "Histograma calculata.\n";
 
+
+    cout << "Se compara doua histograme identice ...\n";
     vector<Ctxt*> result = compareTwoImages(histFiles, histFiles, NUMBER_OF_REGIONS);
+    cout << "Terminat de comparat histogramele.\n";
 
     vector<long> decision = decryptIntVal(result);
     cout << "Metrica comparatiei histogramelor: " << decision[NUMBER_OF_PIXELS-1] << endl;

@@ -317,20 +317,20 @@ int main(int argc, char **argv) {
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    // test_HE_FR_LBP();
+    test_HE_FR_LBP();
 	// allocCtxt(s);
     // testFileStreamsForCtxt();
     // testKeyToFile(d, p);
     clock_t end = clock();
-    cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
+    cout << "TIME: " << clock_diff(begin, end) << " seconds.\n";
     /************* TESTING SPACE *********************************/
 
 
     cout << "Cleaning up ...\n";
     cleanGlobalVariables();
-    cout << "Terminat cleaning up.\n";
+    cout << "Finished cleaning FHEContext.\n";
 
-    cout << "Program terminat.\n";
+    cout << "Program finished.\n";
     return 0;
 }
 
