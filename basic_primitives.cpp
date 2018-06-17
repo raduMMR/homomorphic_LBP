@@ -83,7 +83,7 @@ void readContextFromFile(const char *filename){
 	context = new FHEcontext(m1, p1, r1, gens, ords);
 	keyFile >> *context;
 	secretKey = new FHESecKey(*context);
-	keyFile >> secretKey;
+	keyFile >> *secretKey;
 
 	int d, p;
 	keyFile >> d;

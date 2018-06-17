@@ -206,7 +206,7 @@ void test_mult_time(){
 void testKeyToFile(int d, int p){
     writeContextToFile("keys.txt", d, p);
     
-    fstream keyFile(filename, fstream::in)
+    fstream keyFile("keys.txt", fstream::in);
     unsigned long m1, p1, r1;
     vector<long> gens, ords;
     readContextBase(keyFile, m1, p1, r1, gens, ords);
@@ -218,13 +218,13 @@ void testKeyToFile(int d, int p){
 	keyFile >> testKey;
 	assert(testKey == *secretKey);
     cerr << "secret key matches input\n";
-    int d1, p1;
-    keyFile >> d1;
-    keyFile >> p1;
+    int d_file, p_file;
+    keyFile >> d_file;
+    keyFile >> p_file;
 
-    assert(d1 == d); cout << " d: ok\n";
-    assert(p1 == p); cout << " p: ok\n";
-    
+    assert(d_file == d); cout << " d: ok\n";
+    assert(p_file == p); cout << " p: ok\n";
+
     keyFile.close();
 }
 
