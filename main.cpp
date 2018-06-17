@@ -310,16 +310,17 @@ int main(int argc, char **argv) {
 
     setDryRun(dry);
 
-    cout << "Generare context ...\n";
-    setGlobalVariables(p, r, d, c, w, L, m, gens, ords);
-    cout << "Terminat de generat context.\n";
+    cout << "Setup context ...\n";
+    setGlobalVariables(p, r, d, c, w, L, m, gens, ords); writeContextToFile("keys.txt", d, p);
+    // readContextFromFile("keys.txt");
+    cout << "Finished context setup.\n";
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
     // test_HE_FR_LBP();
 	// allocCtxt(s);
     // testFileStreamsForCtxt();
-    testKeyToFile(d, p);
+    // testKeyToFile(d, p);
     clock_t end = clock();
     cout << "TIMP: " << clock_diff(begin, end) << " secunde.\n";
     /************* TESTING SPACE *********************************/
