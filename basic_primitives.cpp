@@ -95,6 +95,8 @@ void readContextFromFile(const char *filename){
         G = makeIrredPoly(p, d); 
 	ea = new EncryptedArray(*context, G);
 
+	cout << "EA SLOTS = " << ea->size() << endl << endl;
+
 	keyFile.close();
 }
 
