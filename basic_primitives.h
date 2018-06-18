@@ -43,3 +43,6 @@ Ctxt* compute_s (int i, int j, const vector<Ctxt*>& ct_x,const vector<Ctxt*>& ct
 void writeContextToFile(const char *filename, int d, int p);
 
 void readContextFromFile(const char *filename);
+
+// checks if a ctxt needs bootstrapping => return true or not => return false;
+bool needsBootstrapping(const Ctxt* ctxt);

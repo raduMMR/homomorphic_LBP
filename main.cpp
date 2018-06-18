@@ -228,6 +228,23 @@ void testKeyToFile(int d, int p){
     keyFile.close();
 }
 
+void testNeedsBootstrapping(){
+    Ctxt *ctxt = encryptBitVal(vector<long>(NSLOTS, 1));
+
+    int i=0;
+    do{
+        ctxt->multiplyBy(*ctxt);
+        if(needsBootstrapping(ctxt)){
+            cout << "The ctxt needs bootstrapping.\n";
+            break;
+        }
+        i++;
+        cout << i << endl;
+    } while (true && i<50);
+
+    delete ctxt;
+}
+
 int main(int argc, char **argv) {
 
     ArgMapping amap;
@@ -317,7 +334,8 @@ int main(int argc, char **argv) {
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    test_HE_FR_LBP();
+    testNeedsBootstrapping();
+    // test_HE_FR_LBP();
 	// allocCtxt(s);
     // testFileStreamsForCtxt();
     // testKeyToFile(d, p);

@@ -36,3 +36,4 @@ public:
 vector<Ctxt*> compareTwoImages(char **histogram1Files, char **histogram2Files, int nb_regions);
 
 void test_HE_FR_LBP();
+
