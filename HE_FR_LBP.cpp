@@ -114,9 +114,7 @@ void ImageProcessor::computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long>
     assert(localHistFile.is_open());
 
     for(int i=0; i<256; i++){
-cout << "Before encryptIntVal\n";
         vector<Ctxt*> lbp_code = encryptIntVal(vector<long>(NUMBER_OF_PIXELS,/*LBP_code=*/ i), /*T_BITS=*/8);
-cout << "After encryptIntVal\n";
  
         Ctxt *eh = compute_z(0, 8, lbp_code, LBP_codes);
 
@@ -153,12 +151,13 @@ void ImageProcessor::encryptRegion(vector<long> pixels, vector<vector<long>> nei
     // for(int i=0; i<8; i++) {
     //     er->enc_neighbours[i] = encryptIntVal(neighbours[i], 8);
     // }
-
+cout << "criptare pixeli...\n";
     vector<Ctxt*> enc_pixels = encryptIntVal(pixels, 8);
     for(int i=0; i<enc_pixels.size(); i++){
         regionStream << *enc_pixels[i] << endl;
         delete enc_pixels[i];
     }
+cout<< "Pixeli criptati.\nCripteaza vecini...\n";
 
     for(int i=0; i<8; i++){
         vector<Ctxt*> enc_neighbour = encryptIntVal(neighbours[i], 8);
@@ -167,6 +166,7 @@ void ImageProcessor::encryptRegion(vector<long> pixels, vector<vector<long>> nei
             delete enc_neighbour[j];
         }
     }
+cout << "vecini criptati\n";
 
     regionStream.close();
     regionStream.flush();
@@ -208,13 +208,13 @@ void ImageProcessor::encryptImage(uint8_t **image, char **histFiles){
 
     // we added two extra columns and two extra lines to border 
     // the image with zeroes such that every pixel has 8 neighbours
-    for(int i=0; i<8; i++){
-        for(int j=0; j<8; j++){
+    for(int i=0; i<REGION_ROOT; i++){
+        for(int j=0; j<REGION_ROOT; j++){
             vector<long> pixels(NUMBER_OF_PIXELS);
             int k=0;
             vector<vector<long>> neighbours(8, vector<long>(NUMBER_OF_PIXELS));
-            for(int line=1+256/8*i; line<256/8*(i+1)+1; line++){
-                for(int col=1+256/8*j; col<256/8*(j+1)+1; col++){
+            for(int line=1+256/REGION_ROOT*i; line<256/REGION_ROOT*(i+1)+1; line++){
+                for(int col=1+256/REGION_ROOT*j; col<256/REGION_ROOT*(j+1)+1; col++){
                     pixels[k] = image[line][col];
 
                     // the neighbours of the pixel (i,j)
@@ -227,18 +227,28 @@ void ImageProcessor::encryptImage(uint8_t **image, char **histFiles){
                     neighbours[6][k] = image[line-1][col+1];
                     neighbours[7][k] = image[line-1][col+1];
 
-                    k++;
+                    k++;	cout << k << endl;
                 }
             }  
 
             // encrypt the region
             cout << "se cripteaza regiunea (" << i << ", " << j << ")\n";
-            encryptRegion(pixels, neighbours, "region.enc");      
-
+		clock_t begin = clock();
+            encryptRegion(pixels, neighbours, "region.enc");
+	clock_t end = clock();      
+            cout << "Regiune criptata\n";
+	cout << "TIME: " << clock_diff(begin, end) << " seconds.\n";
+		cout << "computeHistogram4Region ...\n";
             // in production, the next call could not be here, but for speeding
             // testing is good
+	begin = clock();
             this->computeHistogram4Region("region.enc", histFiles[i*8+j]);
-            cout << "Regiune criptata\n";
+		end = clock();
+	cout << "TIME: " << clock_diff(begin, end) << " seconds.\n";
+		cout << "Histogram computed.\n";
+
+	i=200; j=200;
+	break;
         }
     }
 }
@@ -246,19 +256,21 @@ void ImageProcessor::encryptImage(uint8_t **image, char **histFiles){
 vector<Ctxt*> ImageProcessor::computeLBP4Region(char *regionFile){
     fstream regionStream(regionFile, fstream::in);
     vector<Ctxt*> enc_pixels = encryptIntVal(vector<long>(NUMBER_OF_PIXELS, 0), 8);
-    vector<vector<Ctxt*>> enc_neighbours(8, enc_pixels);
+    vector<vector<Ctxt*>> enc_neighbours(8);
 
     for(int i=0; i<8; i++){
         regionStream >> *enc_pixels[i];
     }
 
     for(int i=0; i<8; i++){
-        for(int j=0; j<8; j++){
+        enc_neighbours[i] = encryptIntVal(vector<long>(NUMBER_OF_PIXELS, 0), 8);
+	for(int j=0; j<8; j++){	
             regionStream >> *enc_neighbours[i][j];
         }
     }
 
     regionStream.close();
+regionStream.flush();
 
     vector<Ctxt*> enc_lbp = hom_LBP(enc_pixels, enc_neighbours, 8);
 

@@ -317,14 +317,14 @@ int main(int argc, char **argv) {
     setDryRun(dry);
 
     cout << "Setup context ...\n";
-    // setGlobalVariables(p, r, d, c, w, L, m, gens, ords); writeContextToFile("keys.txt", d, p);
-    readContextFromFile("keys.txt");
+    setGlobalVariables(p, r, d, c, w, L, m, gens, ords); writeContextToFile("keys.txt", d, p);
+    // readContextFromFile("keys.txt");
     cout << "Finished context setup.\n";
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    //test_HE_FR_LBP();
-	testCompare();
+    test_HE_FR_LBP();
+//testCompare();
     clock_t end = clock();
     cout << "TIME: " << clock_diff(begin, end) << " seconds.\n";
     /************* TESTING SPACE *********************************/
