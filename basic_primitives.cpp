@@ -149,6 +149,19 @@ vector<long> decryptIntVal(const vector<Ctxt*> enc_bits) {
 }
 
 /*************************************************************************************/
+bool needsBootstrapping(const Ctxt* ctxt){
+    double curNoise = log(ctxt->getNoiseVar())/2;
+    double noiseThreshold = log(ctxt->modSwitchAddedNoiseVar())*0.55;
+
+    if (curNoise>noiseThreshold && ctxt->log_of_ratio()>-0.5)
+    {
+        // cerr << "Ctxt::findBaseSet warning: already at lowest level\n";
+        return true;
+    }
+    return false;
+}
+
+/*************************************************************************************/
 Ctxt* compute_z (int i, int j, const vector<Ctxt*>& ct_x, const vector<Ctxt*>& ct_y)
 {
 	Ctxt *ret = NULL;

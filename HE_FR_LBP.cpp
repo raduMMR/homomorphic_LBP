@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 void add1Bit(vector<Ctxt*> &metric, Ctxt* &ctxt) {
     Ctxt *carry = encryptBitVal(vector<long>(NSLOTS, 0));
     *carry = (*metric[0]);
@@ -18,8 +19,10 @@ void add1Bit(vector<Ctxt*> &metric, Ctxt* &ctxt) {
         *new_carry = (*metric[i]);
         new_carry->multiplyBy(*carry);
         metric[i]->addCtxt(*carry);
-        // TO DO: use this costly refresh only when mandatory.
-        pseudoRefreshCtxt(metric[i]);
+
+        if(needsBootstrapping(metric[i]))
+            pseudoRefreshCtxt(metric[i]);
+
         *carry = *new_carry;
     }
 
