@@ -37,3 +37,5 @@ vector<Ctxt*> compareTwoImages(char **histogram1Files, char **histogram2Files, i
 
 void test_HE_FR_LBP();
 
+void myitoa(int number, char *buffer);
+

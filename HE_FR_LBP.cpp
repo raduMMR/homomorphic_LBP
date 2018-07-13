@@ -234,11 +234,11 @@ void ImageProcessor::encryptImage(uint8_t **image, char **histFiles){
 
             // encrypt the region
             cout << "se cripteaza regiunea (" << i << ", " << j << ")\n";
-            encryptRegion(pixels, neighbours, "region.enc");      
+            encryptRegion(pixels, neighbours, (char const *)"region.enc");      
 
             // in production, the next call could not be here, but for speeding
             // testing is good
-            this->computeHistogram4Region("region.enc", histFiles[i*8+j]);
+            this->computeHistogram4Region((char const *)"region.enc", histFiles[i*8+j]);
             cout << "Regiune criptata\n";
         }
     }

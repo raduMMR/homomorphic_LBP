@@ -12,31 +12,27 @@ class DivisionLookupTable {
     vector<tuple<tuple<long, long>, long>> table;
 };
 
-void testFileStreamsForCtxt(){
+void testFileStreamsForCtxt(int slot){
+    char filename[100];
+    myitoa(slot, filename);
+    strcat(filename, ".slot");
 
-    fstream outStream("test.ctxt", fstream::out|fstream::trunc);
+    fstream outStream(filename, fstream::out|fstream::trunc);
 
-    for(int i=0; i<25; i++){
-        int bit = rand() % 2;
-        cout << bit << " ";
-        Ctxt * ctxt = encryptBitVal(vector<long>(NSLOTS, bit));
+    Ctxt *ctxt = encryptBitVal(vector<long>(NSLOTS, 1));
+
+    // for(int i=0; i<30; i++){
+    //     Ctxt *r = encryptBitVal(vector<long>(NSLOTS, rand()%2));
+    //     ctxt->multiplyBy(*r);
+    //     delete r;
+    // }
+
+    for(int i=0; i<50; i++){
         outStream << *ctxt << endl;
-        delete ctxt;
     }
-    cout << endl;
 
-    outStream.close();
-    outStream.flush();
-
-    Ctxt* ctxt = encryptBitVal(vector<long>(NSLOTS, 0));
-
-    fstream inStream("test.ctxt", fstream::in);
-    for(int i=0; i<25; i++){
-        inStream >> *ctxt;
-        cout << decryptBitVal(ctxt)[0] << " ";
-    }
-    cout << endl;
-    inStream.close();
+    delete ctxt;
+    outStream.close(); outStream.flush();
 }
 
 
@@ -334,7 +330,8 @@ int main(int argc, char **argv) {
 
     /************* TESTING SPACE *********************************/
     clock_t begin = clock();
-    testNeedsBootstrapping();
+    testFileStreamsForCtxt(s);
+    // testNeedsBootstrapping();
     // test_HE_FR_LBP();
 	// allocCtxt(s);
     // testFileStreamsForCtxt();
