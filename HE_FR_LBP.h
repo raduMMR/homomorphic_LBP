@@ -5,8 +5,9 @@
 #include "./../FHE.h"
 using namespace std;
 
-#define NUMBER_OF_REGIONS 64 // the number of regions the image is divided by
-#define NUMBER_OF_PIXELS 1024 // the number of pixels in each region
+#define NUMBER_OF_REGIONS 256 // 128 // 64 // the number of regions the image is divided by
+#define NUMBER_OF_PIXELS 256 //512 // 1024 // the number of pixels in each region
+#define REGION_ROOT 16 // 
 
 class ImageProcessor{
 
@@ -18,11 +19,11 @@ class ImageProcessor{
 
     void encryptRegion(vector<long> pixels, vector<vector<long>> neighbours, char *regionFile);
 
-    void computeHistogram4Region(char *regionFile, char *regionHist);
-
     void computeNbOfOccurences(vector<Ctxt*> LBP_codes, vector<long> histogram, char *filename);
 
 public:
+
+    void computeHistogram4Region(char *regionFile, char *regionHist);
 
     void setNumberOfSlots(int nslots){ this->nslots = nslots; }
 
